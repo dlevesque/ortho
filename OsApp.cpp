@@ -58,6 +58,21 @@ void OsApp::init()
   mRotateButtonZ.init("VJButton3");*/
   mGrabButton.init("VJButton2");
 
+  //Bullet Physics
+  broadphase = new btDbvtBroadphase();
+  collisionConfiguration = new btDefaultCollisionConfiguration();
+  dispatcher = new btCollisionDispatcher(collisionConfiguration);
+  solver = new btSequentialImpulseConstraintSolver();
+  dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
+  dynamicsWorld->setGravity(btVector3(0, -9.8, 0));
+  groundShape = new btStaticPlaneShape(btVector3(0, 1, 0), 1);
+  btDefaultMotionState* groundMotionState =
+                new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, -1, 0)));
+  btRigidBody::btRigidBodyConstructionInfo
+                groundRigidBodyCI(0, groundMotionState, groundShape, btVector3(0, 0, 0));
+  btRigidBody* groundRigidBody = new btRigidBody(groundRigidBodyCI);
+  addBody(groundRigidBody);
+
   femur8 = new MeshObj("femur8.obj");
   table1 = new MeshObj("table1.obj");
   table2 = new MeshObj("table2.obj");
@@ -104,68 +119,92 @@ void OsApp::init()
   const gmtl::Vec3f y_axis( 0.0f, 1.0f, 0.0f );
   const gmtl::Vec3f z_axis( 0.0f, 0.0f, 1.0f );
 
-  table1->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(230.f), y_axis)));
-  table1->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-5.0f, 0.0f, 0.0f)));
   table1->addTransf(gmtl::makeScale<gmtl::Matrix44f,float>(0.06f));
+  table1->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(230.f), y_axis)));
+  table1->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-5.0f*0.06, 0.0f, 0.0f)));
 
-  table2->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(230.f), y_axis)));
-  table2->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-2.5f, 20.0f, 3.0f)));
   table2->addTransf(gmtl::makeScale<gmtl::Matrix44f,float>(0.05f));
+  table2->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(230.f), y_axis)));
+  table2->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-2.5f*0.05, 20.0f*0.05, 3.0f*0.05)));
 
-  tableinst->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(82.f), y_axis)));
-  tableinst->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(300.0f, -10.0f, 744.0f)));
   tableinst->addTransf(gmtl::makeScale<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(0.02f, 0.03f, 0.02f)));
+  tableinst->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(82.f), y_axis)));
+  tableinst->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(300.0f*0.02, -10.0f*0.03, 744.0f*0.02)));
 
+  platte->addTransf(gmtl::makeScale<gmtl::Matrix44f,float>(0.0001f));
   platte->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(79.0f), x_axis )));
   platte->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(5.0f), y_axis )));
-  platte->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(30790.0f,26999.0f,-5500.0f)));
-  platte->addTransf(gmtl::makeScale<gmtl::Matrix44f,float>(0.0001f));
+  platte->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(30790.0f*0.0001,26999.0f*0.0001,-5500.0f*0.0001)));
 
-  scow->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
-  scow->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f,32209.0f,0.0f)));
   scow->addTransf(gmtl::makeScale<gmtl::Matrix44f, float>(0.00009f));
+  scow->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
+  scow->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009,32209.0f*0.00009,0.0f*0.00009)));
+  float dx, dy, dz;
+  dx = scow->aabox.mMax[0] - scow->aabox.mMin[0];
+  dy = scow->aabox.mMax[1] - scow->aabox.mMin[1];
+  dz = scow->aabox.mMax[2] - scow->aabox.mMin[2];
+  fallShape = new btBoxShape(btVector3(dx*0.00009/2, dy*0.00009/2, dz*0.00009/2));
+  gmtl::Matrix44f scowt = scow->getTrans();
+  btMatrix3x3 rot;
+  btVector3 transl;
+  for(int i=0; i<3; ++i)
+  {
+    for(int j=0; j<3; ++j)
+    {
+      rot[i][j] = scowt[i][j];
+    }
+    transl[i] = scowt[i][3];
+  }
+  btDefaultMotionState* fallMotionState =
+                new btDefaultMotionState(btTransform(rot, transl));
+  btScalar mass = 100.f;
+  btVector3 fallInertia(0, 0, 0);
+  fallShape->calculateLocalInertia(mass, fallInertia);
+  btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass, fallMotionState, fallShape, fallInertia);
+  fallRigidBody = new btRigidBody(fallRigidBodyCI);
+  addBody(fallRigidBody);
 
-  scow1->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
-  scow1->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f,32209.0f,1000.0f)));
   scow1->addTransf(gmtl::makeScale<gmtl::Matrix44f, float>(0.00009f));
+  scow1->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
+  scow1->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009,32209.0f*0.00009,1000.0f*0.00009)));
 
-  scow2->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
-  scow2->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f,32209.0f,2000.0f)));
   scow2->addTransf(gmtl::makeScale<gmtl::Matrix44f, float>(0.00009f));
+  scow2->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
+  scow2->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009,32209.0f*0.00009,2000.0f*0.00009)));
 
-  scow3->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
-  scow3->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f,32209.0f,-900.0f)));
   scow3->addTransf(gmtl::makeScale<gmtl::Matrix44f, float>(0.00009f));
+  scow3->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
+  scow3->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009,32209.0f*0.00009,-900.0f*0.00009)));
 
-  cube1->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(7.f), y_axis)));
-  cube1->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(510.0f,750.7f,580.0f)));
   cube1->addTransf(gmtl::makeScale<gmtl::Matrix44f, float>(0.003f));
+  cube1->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(7.f), y_axis)));
+  cube1->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(510.0f*0.003,750.7f*0.003,580.0f*0.003)));
 
-  cube2->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(7.f), y_axis)));
-  cube2->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(770.0f,750.7f,560.0f)));
   cube2->addTransf(gmtl::makeScale<gmtl::Matrix44f, float>(0.003f));
+  cube2->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(7.f), y_axis)));
+  cube2->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(770.0f*0.003,750.7f*0.003,560.0f*0.003)));
 
+  moteur->addTransf(gmtl::makeScale<gmtl::Matrix44f,float>(0.0017f));
   moteur->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(-10.0f), y_axis )));
   moteur->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(150.0f), z_axis )));
   moteur->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(80.0f), x_axis )));
-  moteur->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(2000.9f,1750.0f,250.0f)));
-  moteur->addTransf(gmtl::makeScale<gmtl::Matrix44f,float>(0.0017f));
+  moteur->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(2000.9f*0.0017,1750.0f*0.0017,250.0f*0.0017)));
 
+  meche->addTransf(gmtl::makeScale<gmtl::Matrix44f,float>(0.025f));
   meche->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(-180.0f), x_axis )));
   meche->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(-35.0f), z_axis )));
   meche->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(80.0f), x_axis )));
-  meche->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(131.8f, 126.f, -4.3f)));
-  meche->addTransf(gmtl::makeScale<gmtl::Matrix44f,float>(0.025f));
+  meche->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(131.8f*0.025, 126.f*0.025, -4.3f*0.025)));
 
+  femur8->addTransf(gmtl::makeScale<gmtl::Matrix44f,float>(0.0023f));
   femur8->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(4.0f), y_axis )));
   femur8->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.0f), z_axis )));
   femur8->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(-78.0f), y_axis )));
-  femur8->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(280.0f,1230.0f,2600.0f)));
-  femur8->addTransf(gmtl::makeScale<gmtl::Matrix44f,float>(0.0023f));
+  femur8->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(280.0f*0.0023,1230.0f*0.0023,2600.0f*0.0023)));
 
-  verb->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(55.0f), x_axis )));
-  verb->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(60000.0f,48990.0f,-16000.0f)));
   verb->addTransf(gmtl::makeScale<gmtl::Matrix44f,float>(0.000057f));
+  verb->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(55.0f), x_axis )));
+  verb->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(60000.0f*0.000057,48990.0f*0.000057,-16000.0f*0.000057)));
 }
 
 void OsApp::contextInit()
@@ -224,14 +263,6 @@ void OsApp::updateGrabbing()
 
   gadget::Digital::State grabState = mGrabButton->getData();
 
-  // Si on n'appuie pas sur le bouton et que rien n'était sélectionné, rien à faire
-  // (pas vraiment nécessaire étant donné le if qui suit...)
-  //if(!grab && !selected)
-  //{
-  //  mSphereSelected = false;
-  //  return;
-  //}
-
   // Si on n'appuie pas sur le bouton, il faut déselectionner et sortir
   if(grabState == gadget::Digital::OFF || grabState == gadget::Digital::TOGGLE_OFF)
   {
@@ -248,10 +279,6 @@ void OsApp::updateGrabbing()
 
   if(!selected)
   {
-    //if(grabState == gadget::Digital::TOGGLE_ON)
-    //{
-    //  std::cout << "TOGGLE_ON ";
-    //}
     if(grabState != gadget::Digital::TOGGLE_ON)
     {
       return;
@@ -367,114 +394,6 @@ void OsApp::bufferPreDraw()
   glClear(GL_COLOR_BUFFER_BIT);
 }
 
-//btAlignedObjectArray<btCollisionShape*>	m_collisionShapes; //keep the collision shapes, for deletion/cleanup
-//btBroadphaseInterface*					m_broadphase;
-//btCollisionDispatcher*					m_dispatcher;
-//btConstraintSolver*						m_solver;
-//btDefaultCollisionConfiguration*		m_collisionConfiguration;
-//btDynamicsWorld*						m_dynamicsWorld; //this is the most important class
-//
-//void OsApp::StepBulletPhysics()
-//{
-//	if(m_dynamicsWorld)//step the simulation
-//		m_dynamicsWorld->stepSimulation(1.0f/2000.0f);
-//}
-//
-//void OsApp::InitBulletPhysics()
-//{
-//
-//	m_collisionConfiguration = new btDefaultCollisionConfiguration(); //collision configuration contains default setup for memory, collision setup
-//	m_dispatcher			 = new btCollisionDispatcher(m_collisionConfiguration); //use the default collision dispatcher 
-//	m_broadphase		  	 = new btDbvtBroadphase();
-//	m_solver			 	 = new btSequentialImpulseConstraintSolver; //the default constraint solver
-//	m_dynamicsWorld			 = new btDiscreteDynamicsWorld(m_dispatcher,m_broadphase,m_solver,m_collisionConfiguration);
-//	m_dynamicsWorld->setGravity(btVector3(0,-10,0));
-//
-//	
-//	
-//	//Creating a static shape which will act as ground
-//	{
-//		btCollisionShape* groundShape = new btBoxShape(btVector3(50,50,50));
-//		// btCollisionShape* groundShape = new btStaticPlaneShape(btVector3(0,1,0),50);
-//		m_collisionShapes.push_back(groundShape);
-//		
-//		btScalar mass = 0; //rigidbody is static if mass is zero, otherwise dynamic
-//		btVector3 localInertia(0,0,0);
-//
-//		groundShape->calculateLocalInertia(mass,localInertia);
-//
-//		btTransform groundTransform;
-//		groundTransform.setIdentity();
-//		groundTransform.setOrigin(btVector3(0,-45,0));
-//
-//		btDefaultMotionState* myMotionState = new btDefaultMotionState(groundTransform); //motionstate provides interpolation capabilities, and only synchronizes 'active' objects
-//		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass,myMotionState,groundShape,localInertia);
-//		btRigidBody* body = new btRigidBody(rbInfo);
-//		
-//		m_dynamicsWorld->addRigidBody(body); //add the body to the dynamics world
-//	}
-//
-//
-//	//Creating some dynamic boxes
-//	{
-//		btCollisionShape* boxShape = new btBoxShape(btVector3(0.5,0.5,0.5));
-//		m_collisionShapes.push_back(boxShape);
-//
-//		btScalar mass = 1.0f;
-//		btVector3 localInertia(0,0,0);
-//
-//		boxShape->calculateLocalInertia(mass,localInertia);
-//
-//		btTransform startTransform;
-//		startTransform.setIdentity();
-//		startTransform.setOrigin(btVector3(5,20,0));
-//
-//		
-//		for(int j=0; j<1; j++)
-//		{
-//			startTransform.setOrigin(btVector3(9,(j*10)+12 ,0));
-//
-//			btDefaultMotionState* myMotionState = new btDefaultMotionState(startTransform);
-//			btRigidBody::btRigidBodyConstructionInfo rbInfo(mass,myMotionState,boxShape,localInertia);
-//			btRigidBody* body = new btRigidBody(rbInfo);
-//
-//			m_dynamicsWorld->addRigidBody(body);
-//		}
-//
-//	}
-//
-//}
-//
-//void OsApp::ExitBulletPhysics()
-//{
-//	//cleanup in the reverse order of creation/initialization
-//
-//	for (int i=m_dynamicsWorld->getNumCollisionObjects()-1; i>=0; i--) //remove the rigidbodies from the dynamics world and delete them
-//	{
-//		btCollisionObject* obj = m_dynamicsWorld->getCollisionObjectArray()[i];
-//		btRigidBody* body = btRigidBody::upcast(obj);
-//		if(body && body->getMotionState())
-//			delete body->getMotionState();
-//		
-//		m_dynamicsWorld->removeCollisionObject(obj);
-//		delete obj;
-//	}
-//
-//	
-//	for (int j=0; j<m_collisionShapes.size(); j++) //delete collision shapes
-//	{
-//		btCollisionShape* shape = m_collisionShapes[j];
-//		delete shape;
-//	}
-//	
-//	m_collisionShapes.clear();
-//	delete m_dynamicsWorld;
-//	delete m_solver;
-//	delete m_broadphase;
-//	delete m_dispatcher;
-//	delete m_collisionConfiguration;
-//}
-
 void OsApp::draw()
 {
   glClear(GL_DEPTH_BUFFER_BIT);
@@ -482,20 +401,79 @@ void OsApp::draw()
   glMatrixMode(GL_MODELVIEW);
   if (mFramesToSleep > 0) return;
 
+  dynamicsWorld->stepSimulation(1./60.);
+
   glPushMatrix();
-    glMultMatrixf(table1->getTrans().mData);
-    table1->draw_model();
+    glColor3f(0.3f, 0.3f, 0.3f);
+    glBegin(GL_QUADS);
+      glVertex3f(-100.f, 0.f, -100.f);
+      glVertex3f(-100.f, 0.f,  100.f);
+      glVertex3f( 100.f, 0.f,  100.f);
+      glVertex3f( 100.f, 0.f, -100.f);
+    glEnd();
   glPopMatrix();
 
   glPushMatrix();
-    glMultMatrixf(table2->getTrans().mData);
-    table2->draw_model();
+    glColor3f(1.0f, 0.0f, 0.0f);
+    gluSphere(mSphereQuad, 1.0f, 15, 15);
   glPopMatrix();
 
   glPushMatrix();
-    glMultMatrixf(tableinst->getTrans().mData);
-    tableinst->draw_model();
+    glColor3f(0.0f, 1.0f, 0.0f);
+    glTranslatef(10.0f, 0.0f, 0.0f);
+    gluSphere(mSphereQuad, 1.0f, 15, 15);
   glPopMatrix();
+
+  glPushMatrix();
+    glColor3f(0.0f, 0.0f, 1.0f);
+    glTranslatef(10.0f, 10.0f, 0.0f);
+    gluSphere(mSphereQuad, 1.0f, 15, 15);
+  glPopMatrix();
+
+  glPushMatrix();
+    glColor3f(1.0f, 1.0f, 0.0f);
+    glTranslatef(0.0f, 10.0f, 0.0f);
+    gluSphere(mSphereQuad, 1.0f, 15, 15);
+  glPopMatrix();
+
+  glPushMatrix();
+    glColor3f(0.01f, 0.01f, 0.01f);
+    glTranslatef(0.0f, 0.0f, 10.0f);
+    gluSphere(mSphereQuad, 1.0f, 115, 115);
+  glPopMatrix();
+
+  glPushMatrix();
+    glColor3f(0.2f, 0.2f, 0.2f);
+    glTranslatef(0.0f, 10.0f, 10.0f);
+    gluSphere(mSphereQuad, 1.0f, 15, 15);
+  glPopMatrix();
+
+  glPushMatrix();
+    glColor3f(0.5f, 0.5f, 0.5f);
+    glTranslatef(10.0f, 10.0f, 10.0f);
+    gluSphere(mSphereQuad, 1.0f, 15, 15);
+  glPopMatrix();
+
+  glPushMatrix();
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glTranslatef(10.0f, 0.0f, 10.0f);
+    gluSphere(mSphereQuad, 1.0f, 15, 15);
+  glPopMatrix();
+
+  //glPushMatrix();
+  //  glMultMatrixf(table1->getTrans().mData);
+  //  table1->draw_model();
+  //glPopMatrix();
+
+  //glPushMatrix();
+  //  glMultMatrixf(table2->getTrans().mData);
+  //  table2->draw_model();
+  //glPopMatrix();
+
+  //glPushMatrix();
+  //  glMultMatrixf(tableinst->getTrans().mData);
+  //  tableinst->draw_model();
+  //glPopMatrix();
 
   glPushMatrix();
     glMultMatrixf(platte->getPostTransf().mData);
@@ -503,9 +481,20 @@ void OsApp::draw()
     platte->draw_model();
   glPopMatrix();
 
+  //glPushMatrix();
+  //  glMultMatrixf(scow->getPostTransf().mData);
+  //  glMultMatrixf(scow->getTrans().mData);
+  //  scow->draw_model();
+  //glPopMatrix();
+
   glPushMatrix();
-    glMultMatrixf(scow->getPostTransf().mData);
-    glMultMatrixf(scow->getTrans().mData);
+    float mat[16];
+    btTransform t;
+    fallRigidBody->getMotionState()->getWorldTransform(t);
+    t.getOpenGLMatrix(mat);
+    glMultMatrixf(mat);
+    //glMultMatrixf(scow->getTrans().mData);
+    glScalef(0.00009f, 0.00009f, 0.00009f);
     scow->draw_model();
   glPopMatrix();
 

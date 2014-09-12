@@ -49,6 +49,8 @@
 
 #include <vector>
 
+#include <btBulletDynamicsCommon.h>
+
 //#include <vrj/Test/TestRunner.h>
 
 #include "OBJlib.h"
@@ -182,6 +184,23 @@ private:
   MeshObj *selected;
 
   float theta;
+
+  //Bullet Physics
+  btBroadphaseInterface *broadphase;
+  btDefaultCollisionConfiguration *collisionConfiguration;
+  btCollisionDispatcher *dispatcher;
+  btSequentialImpulseConstraintSolver *solver;
+  btDiscreteDynamicsWorld *dynamicsWorld;
+  btCollisionShape *groundShape;
+  btCollisionShape *fallShape;
+  btRigidBody* fallRigidBody;
+  std::vector<btRigidBody*> bodies;
+
+  void addBody(btRigidBody *body)
+  {
+    dynamicsWorld->addRigidBody(body);
+    bodies.push_back(body);
+  }
 
   //vrj::test::TestRunner*  mTestRunner;
 
