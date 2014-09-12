@@ -77,64 +77,6 @@ void OsApp::init()
 
   theta = 0.f;
 
-  //mouve = gmtl::MAT_IDENTITY44F;
-
-  //sel = false;
-  //sel1 = false;
-  //sel2 = false;
-  //sel3 = false;
-  //sel4 = false;
-  //sel5 = false;
-  //sel6 = false;
-  //sel7 = false;
-  //sel8 = false;
-  //sel9 = false;
-  //sel0 = false;
-
-  //trans[0]=0.f;
-  //trans[1]=0.f;
-  //trans[2]=0.f;
-
-  //tr[0]=0.f;
-  //tr[1]=0.f;
-  //tr[2]=0.f;
-
-  //trr[0]=0.f;
-  //trr[1]=0.f;
-  //trr[2]=0.f;
-
-  //trrr[0]=0.f;
-  //trrr[1]=0.f;
-  //trrr[2]=0.f;
-
-  //tr1[0]=0.f;
-  //tr1[1]=0.f;
-  //tr1[2]=0.f;
-
-  //tr2[0]=0.f;
-  //tr2[1]=0.f;
-  //tr2[2]=0.f;
-
-  //tr3[0]=0.f;
-  //tr3[1]=0.f;
-  //tr3[2]=0.f;
-
-  //tr4[0]=0.f;
-  //tr4[1]=0.f;
-  //tr4[2]=0.f;
-
-  //tr9[0]=0.f;
-  //tr9[1]=0.f;
-  //tr9[2]=0.f;
-
-  //tr0[0]=0.f;
-  //tr0[1]=0.f;
-  //tr0[2]=0.f;
-
-  //mouve[0][3]=0.f;
-  //mouve[1][3]=0.f;
-  //mouve[2][3]=0.f;
-
   // Uncomment these lines when setting up logger tests
   //mDumpStateButton.init("VJButton2");
   //mLoggerPlayButton.init("LoggerPlayButton");
@@ -282,23 +224,21 @@ void OsApp::updateGrabbing()
 
   gadget::Digital::State grabState = mGrabButton->getData();
 
-  bool grab = (mGrabButton->getData() == gadget::Digital::ON);
-
   // Si on n'appuie pas sur le bouton et que rien n'était sélectionné, rien à faire
   // (pas vraiment nécessaire étant donné le if qui suit...)
-  if(!grab && !selected)
-  {
-    mSphereSelected = false;
-    return;
-  }
+  //if(!grab && !selected)
+  //{
+  //  mSphereSelected = false;
+  //  return;
+  //}
 
   // Si on n'appuie pas sur le bouton, il faut déselectionner et sortir
-  if(!grab)
+  if(grabState == gadget::Digital::OFF || grabState == gadget::Digital::TOGGLE_OFF)
   {
-    if(selected==moteur) // il faut arrêter la rotation de la mèche
-    {
-      theta = 0.f;
-    }
+    //if(selected==moteur) // il faut arrêter la rotation de la mèche
+    //{
+    //  theta = 0.f;
+    //}
     mSphereSelected = false;
     selected = 0;
     return;
@@ -308,6 +248,14 @@ void OsApp::updateGrabbing()
 
   if(!selected)
   {
+    //if(grabState == gadget::Digital::TOGGLE_ON)
+    //{
+    //  std::cout << "TOGGLE_ON ";
+    //}
+    if(grabState != gadget::Digital::TOGGLE_ON)
+    {
+      return;
+    }
     // Détecter quel objet on veut saisir
     detIntersection();
     if(!selected)
