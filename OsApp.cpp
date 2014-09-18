@@ -65,6 +65,7 @@ void OsApp::init()
   solver = new btSequentialImpulseConstraintSolver();
   dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
   dynamicsWorld->setGravity(btVector3(0, -9.8, 0));
+
   groundShape = new btStaticPlaneShape(btVector3(0, 1, 0), 1);
   btDefaultMotionState* groundMotionState =
                 new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, -1, 0)));
@@ -118,6 +119,7 @@ void OsApp::init()
   const gmtl::Vec3f x_axis( 1.0f, 0.0f, 0.0f );
   const gmtl::Vec3f y_axis( 0.0f, 1.0f, 0.0f );
   const gmtl::Vec3f z_axis( 0.0f, 0.0f, 1.0f );
+  float dx, dy, dz;
 
   table1->addTransf(gmtl::makeScale<gmtl::Matrix44f,float>(0.06f));
   table1->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(230.f), y_axis)));
@@ -130,6 +132,49 @@ void OsApp::init()
   tableinst->addTransf(gmtl::makeScale<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(0.02f, 0.03f, 0.02f)));
   tableinst->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(82.f), y_axis)));
   tableinst->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(300.0f*0.02, -10.0f*0.03, 744.0f*0.02)));
+  tableinst->make_bbox();
+  std::cout << "tableinst " << tableinst->aabox.mMin[0] << ' ' << tableinst->aabox.mMin[1] << ' ' << tableinst->aabox.mMin[2] << ' ' <<
+    tableinst->aabox.mMax[0] << ' ' << tableinst->aabox.mMax[1] << ' ' << tableinst->aabox.mMax[2] << ' ' << std::endl;
+  std::cout << "tableinst " << tableinst->getWaabox().mMin[0] << ' ' << tableinst->getWaabox().mMin[1] << ' ' << tableinst->getWaabox().mMin[2] << ' ' <<
+    tableinst->getWaabox().mMax[0] << ' ' << tableinst->getWaabox().mMax[1] << ' ' << tableinst->getWaabox().mMax[2] << ' ' << std::endl;
+  dx = tableinst->aabox.mMax[0] - tableinst->aabox.mMin[0];
+  dy = tableinst->aabox.mMax[1] - tableinst->aabox.mMin[1];
+  dz = tableinst->aabox.mMax[2] - tableinst->aabox.mMin[2];
+  tableInstShape = new btBoxShape(btVector3(dx/2, dy/2, dz/2));
+  //MeshObj dummy("tableinst.obj");
+  //dummy.addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(82.f), y_axis)));
+  //dummy.addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(300.0f*0.02, -10.0f*0.03, 744.0f*0.02)));
+  gmtl::Matrix44f tableInstT = tableinst->getTrans();
+  btMatrix3x3 tableInstRot;
+  btVector3 tableInstTransl;
+  std::cout << "centre ";
+  gmtl::Point3f trCentre = tableInstT * gmtl::Point3f(tableinst->center[0],tableinst->center[1],tableinst->center[2]);
+  for(int i=0; i<3; ++i)
+  {
+    for(int j=0; j<3; ++j)
+    {
+      tableInstRot[i][j] = tableInstT[i][j];
+    }
+    tableInstTransl[i] = trCentre[i]; //tableInstT[i][3] + tableinst->center[i]*(i==1 ? 0.03 : 0.02);
+    std::cout << tableInstTransl[i] << ' ';
+  }
+  std::cout << std::endl;
+  std::cout << "centre transformé ";
+  for(int i=0; i<3; ++i) std::cout << trCentre[i] << ' ';
+  std::cout << std::endl;
+  btDefaultMotionState* tableInstMotionState =
+                new btDefaultMotionState(btTransform(tableInstRot, tableInstTransl));
+  btRigidBody::btRigidBodyConstructionInfo tableInstRigidBodyCI(0, tableInstMotionState, tableInstShape, btVector3(0,0,0));
+  tableInstRigidBody = new btRigidBody(tableInstRigidBodyCI);
+  addBody(tableInstRigidBody);
+  float mat[16];
+  btTransform t;
+  tableInstRigidBody->getMotionState()->getWorldTransform(t);
+  t.getOpenGLMatrix(mat);
+  for(int i=0; i<16; ++i) std::cout << mat[i] << ' ';
+  std::cout << std::endl;
+  for(int i=0; i<16; ++i) std::cout << tableinst->getTrans().mData[i] << ' ';
+  std::cout << std::endl;
 
   platte->addTransf(gmtl::makeScale<gmtl::Matrix44f,float>(0.0001f));
   platte->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(79.0f), x_axis )));
@@ -138,8 +183,7 @@ void OsApp::init()
 
   scow->addTransf(gmtl::makeScale<gmtl::Matrix44f, float>(0.00009f));
   scow->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
-  scow->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009,32209.0f*0.00009,0.0f*0.00009)));
-  float dx, dy, dz;
+  scow->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009,72209.0f*0.00009,0.0f*0.00009)));
   dx = scow->aabox.mMax[0] - scow->aabox.mMin[0];
   dy = scow->aabox.mMax[1] - scow->aabox.mMin[1];
   dz = scow->aabox.mMax[2] - scow->aabox.mMin[2];
@@ -163,6 +207,15 @@ void OsApp::init()
   btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass, fallMotionState, fallShape, fallInertia);
   fallRigidBody = new btRigidBody(fallRigidBodyCI);
   addBody(fallRigidBody);
+
+  //float mat[16];
+  //btTransform t;
+  //fallRigidBody->getMotionState()->getWorldTransform(t);
+  //t.getOpenGLMatrix(mat);
+  //for(int i=0; i<16; ++i) std::cout << mat[i] << ' ';
+  //std::cout << std::endl;
+  //for(int i=0; i<16; ++i) std::cout << scow->getTrans().mData[i] << ' ';
+  //std::cout << std::endl;
 
   scow1->addTransf(gmtl::makeScale<gmtl::Matrix44f, float>(0.00009f));
   scow1->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
@@ -403,62 +456,62 @@ void OsApp::draw()
 
   dynamicsWorld->stepSimulation(1./60.);
 
-  glPushMatrix();
-    glColor3f(0.3f, 0.3f, 0.3f);
-    glBegin(GL_QUADS);
-      glVertex3f(-100.f, 0.f, -100.f);
-      glVertex3f(-100.f, 0.f,  100.f);
-      glVertex3f( 100.f, 0.f,  100.f);
-      glVertex3f( 100.f, 0.f, -100.f);
-    glEnd();
-  glPopMatrix();
+  //glPushMatrix();
+  //  glColor3f(0.3f, 0.3f, 0.3f);
+  //  glBegin(GL_QUADS);
+  //    glVertex3f(-100.f, 0.f, -100.f);
+  //    glVertex3f(-100.f, 0.f,  100.f);
+  //    glVertex3f( 100.f, 0.f,  100.f);
+  //    glVertex3f( 100.f, 0.f, -100.f);
+  //  glEnd();
+  //glPopMatrix();
 
-  glPushMatrix();
-    glColor3f(1.0f, 0.0f, 0.0f);
-    gluSphere(mSphereQuad, 1.0f, 15, 15);
-  glPopMatrix();
+  //glPushMatrix();
+  //  glColor3f(1.0f, 0.0f, 0.0f);
+  //  gluSphere(mSphereQuad, 1.0f, 15, 15);
+  //glPopMatrix();
 
-  glPushMatrix();
-    glColor3f(0.0f, 1.0f, 0.0f);
-    glTranslatef(10.0f, 0.0f, 0.0f);
-    gluSphere(mSphereQuad, 1.0f, 15, 15);
-  glPopMatrix();
+  //glPushMatrix();
+  //  glColor3f(0.0f, 1.0f, 0.0f);
+  //  glTranslatef(10.0f, 0.0f, 0.0f);
+  //  gluSphere(mSphereQuad, 1.0f, 15, 15);
+  //glPopMatrix();
 
-  glPushMatrix();
-    glColor3f(0.0f, 0.0f, 1.0f);
-    glTranslatef(10.0f, 10.0f, 0.0f);
-    gluSphere(mSphereQuad, 1.0f, 15, 15);
-  glPopMatrix();
+  //glPushMatrix();
+  //  glColor3f(0.0f, 0.0f, 1.0f);
+  //  glTranslatef(10.0f, 10.0f, 0.0f);
+  //  gluSphere(mSphereQuad, 1.0f, 15, 15);
+  //glPopMatrix();
 
-  glPushMatrix();
-    glColor3f(1.0f, 1.0f, 0.0f);
-    glTranslatef(0.0f, 10.0f, 0.0f);
-    gluSphere(mSphereQuad, 1.0f, 15, 15);
-  glPopMatrix();
+  //glPushMatrix();
+  //  glColor3f(1.0f, 1.0f, 0.0f);
+  //  glTranslatef(0.0f, 10.0f, 0.0f);
+  //  gluSphere(mSphereQuad, 1.0f, 15, 15);
+  //glPopMatrix();
 
-  glPushMatrix();
-    glColor3f(0.01f, 0.01f, 0.01f);
-    glTranslatef(0.0f, 0.0f, 10.0f);
-    gluSphere(mSphereQuad, 1.0f, 115, 115);
-  glPopMatrix();
+  //glPushMatrix();
+  //  glColor3f(0.01f, 0.01f, 0.01f);
+  //  glTranslatef(0.0f, 0.0f, 10.0f);
+  //  gluSphere(mSphereQuad, 1.0f, 115, 115);
+  //glPopMatrix();
 
-  glPushMatrix();
-    glColor3f(0.2f, 0.2f, 0.2f);
-    glTranslatef(0.0f, 10.0f, 10.0f);
-    gluSphere(mSphereQuad, 1.0f, 15, 15);
-  glPopMatrix();
+  //glPushMatrix();
+  //  glColor3f(0.2f, 0.2f, 0.2f);
+  //  glTranslatef(0.0f, 10.0f, 10.0f);
+  //  gluSphere(mSphereQuad, 1.0f, 15, 15);
+  //glPopMatrix();
 
-  glPushMatrix();
-    glColor3f(0.5f, 0.5f, 0.5f);
-    glTranslatef(10.0f, 10.0f, 10.0f);
-    gluSphere(mSphereQuad, 1.0f, 15, 15);
-  glPopMatrix();
+  //glPushMatrix();
+  //  glColor3f(0.5f, 0.5f, 0.5f);
+  //  glTranslatef(10.0f, 10.0f, 10.0f);
+  //  gluSphere(mSphereQuad, 1.0f, 15, 15);
+  //glPopMatrix();
 
-  glPushMatrix();
-    glColor3f(1.0f, 1.0f, 1.0f);
-    glTranslatef(10.0f, 0.0f, 10.0f);
-    gluSphere(mSphereQuad, 1.0f, 15, 15);
-  glPopMatrix();
+  //glPushMatrix();
+  //  glColor3f(1.0f, 1.0f, 1.0f);
+  //  glTranslatef(10.0f, 0.0f, 10.0f);
+  //  gluSphere(mSphereQuad, 1.0f, 15, 15);
+  //glPopMatrix();
 
   //glPushMatrix();
   //  glMultMatrixf(table1->getTrans().mData);
@@ -470,10 +523,35 @@ void OsApp::draw()
   //  table2->draw_model();
   //glPopMatrix();
 
-  //glPushMatrix();
-  //  glMultMatrixf(tableinst->getTrans().mData);
-  //  tableinst->draw_model();
-  //glPopMatrix();
+  glPushMatrix();
+    glMultMatrixf(tableinst->getTrans().mData);
+    tableinst->draw_model();
+  glPopMatrix();
+
+  glPushMatrix();
+  {
+    float mat[16];
+    btTransform t;
+    tableInstRigidBody->getMotionState()->getWorldTransform(t);
+    t.getOpenGLMatrix(mat);
+    glMultMatrixf(mat);
+  }
+    //glMultMatrixf(tableinst->getTrans().mData);
+    //glScalef(1./0.02f, 1./0.03f, 1./0.02f);
+    btVector3 aamin, aamax;
+    tableInstShape->getAabb(btTransform::getIdentity(), aamin, aamax);
+    glColor3f(255.0f, 0.f, 0.f);
+    glBegin(GL_LINE_STRIP);
+      glVertex3f(aamin[0], aamin[1], aamin[2]);
+      glVertex3f(aamax[0], aamax[1], aamax[2]);
+      glVertex3f(aamax[0], aamax[1], aamin[2]);
+      glVertex3f(aamin[0], aamax[1], aamin[2]);
+      glVertex3f(aamin[0], aamax[1], aamax[2]);
+      glVertex3f(aamax[0], aamin[1], aamin[2]);
+      //glVertex3f(-1.f, -1.f, -1.f);
+      //glVertex3f(1.f, 1.f, 1.f);
+    glEnd();
+  glPopMatrix();
 
   glPushMatrix();
     glMultMatrixf(platte->getPostTransf().mData);
@@ -488,13 +566,15 @@ void OsApp::draw()
   //glPopMatrix();
 
   glPushMatrix();
+  {
     float mat[16];
     btTransform t;
     fallRigidBody->getMotionState()->getWorldTransform(t);
     t.getOpenGLMatrix(mat);
     glMultMatrixf(mat);
-    //glMultMatrixf(scow->getTrans().mData);
+  }
     glScalef(0.00009f, 0.00009f, 0.00009f);
+    //glMultMatrixf(scow->getTrans().mData);
     scow->draw_model();
   glPopMatrix();
 
