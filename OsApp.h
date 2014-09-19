@@ -197,6 +197,7 @@ private:
   btCollisionShape *tableInstShape;
   btRigidBody* tableInstRigidBody;
   std::vector<btRigidBody*> bodies;
+  std::vector<btRigidBody*> fallRigidBodies;
 
   void addBody(btRigidBody *body)
   {

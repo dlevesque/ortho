@@ -140,33 +140,36 @@ void OsApp::init()
   dx = tableinst->aabox.mMax[0] - tableinst->aabox.mMin[0];
   dy = tableinst->aabox.mMax[1] - tableinst->aabox.mMin[1];
   dz = tableinst->aabox.mMax[2] - tableinst->aabox.mMin[2];
-  tableInstShape = new btBoxShape(btVector3(dx/2, dy/2, dz/2));
+  tableInstShape = new btBoxShape(btVector3(dx*0.02/2, dy*0.03/2, dz*0.02/2));
   //MeshObj dummy("tableinst.obj");
   //dummy.addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(82.f), y_axis)));
   //dummy.addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(300.0f*0.02, -10.0f*0.03, 744.0f*0.02)));
   gmtl::Matrix44f tableInstT = tableinst->getTrans();
-  btMatrix3x3 tableInstRot;
-  btVector3 tableInstTransl;
-  std::cout << "centre ";
+  //btMatrix3x3 tableInstRot;
+  //btVector3 tableInstTransl;
+  //std::cout << "centre ";
   gmtl::Point3f trCentre = tableInstT * gmtl::Point3f(tableinst->center[0],tableinst->center[1],tableinst->center[2]);
-  for(int i=0; i<3; ++i)
-  {
-    for(int j=0; j<3; ++j)
-    {
-      tableInstRot[i][j] = tableInstT[i][j];
-    }
-    tableInstTransl[i] = trCentre[i]; //tableInstT[i][3] + tableinst->center[i]*(i==1 ? 0.03 : 0.02);
-    std::cout << tableInstTransl[i] << ' ';
-  }
-  std::cout << std::endl;
+  //for(int i=0; i<3; ++i)
+  //{
+  //  for(int j=0; j<3; ++j)
+  //  {
+  //    tableInstRot[i][j] = tableInstT[i][j];
+  //  }
+  //  tableInstTransl[i] = trCentre[i]; //tableInstT[i][3] + tableinst->center[i]*(i==1 ? 0.03 : 0.02);
+  //  std::cout << tableInstTransl[i] << ' ';
+  //}
+  //std::cout << std::endl;
   std::cout << "centre transformé ";
   for(int i=0; i<3; ++i) std::cout << trCentre[i] << ' ';
   std::cout << std::endl;
+  //btDefaultMotionState* tableInstMotionState =
+  //              new btDefaultMotionState(btTransform(tableInstRot, tableInstTransl));
   btDefaultMotionState* tableInstMotionState =
-                new btDefaultMotionState(btTransform(tableInstRot, tableInstTransl));
+                new btDefaultMotionState(btTransform(btQuaternion(gmtl::Math::deg2Rad(82.f),0,0), btVector3(trCentre[0],trCentre[1],trCentre[2])));
   btRigidBody::btRigidBodyConstructionInfo tableInstRigidBodyCI(0, tableInstMotionState, tableInstShape, btVector3(0,0,0));
   tableInstRigidBody = new btRigidBody(tableInstRigidBodyCI);
   addBody(tableInstRigidBody);
+  tableinst->setBody(tableInstRigidBody);
   float mat[16];
   btTransform t;
   tableInstRigidBody->getMotionState()->getWorldTransform(t);
@@ -207,6 +210,7 @@ void OsApp::init()
   btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass, fallMotionState, fallShape, fallInertia);
   fallRigidBody = new btRigidBody(fallRigidBodyCI);
   addBody(fallRigidBody);
+  scow->setBody(fallRigidBody);
 
   //float mat[16];
   //btTransform t;
@@ -258,6 +262,30 @@ void OsApp::init()
   verb->addTransf(gmtl::makeScale<gmtl::Matrix44f,float>(0.000057f));
   verb->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(55.0f), x_axis )));
   verb->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(60000.0f*0.000057,48990.0f*0.000057,-16000.0f*0.000057)));
+
+  btCollisionShape *fallSphereShape = new btSphereShape(0.02);
+  btScalar sphereMass = 100.f;
+  btVector3 fallSphereInertia(0, 0, 0);
+  fallSphereShape->calculateLocalInertia(sphereMass, fallSphereInertia);
+  for(float x = -10.f; x<10.5f; x+=0.5)
+  {
+    for(float z = -10.f; z<10.5f; z+=0.5)
+    {
+      btDefaultMotionState* fallMotionState =
+                    new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(x, 15.f, z)));
+      btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(sphereMass, fallMotionState, fallSphereShape, fallSphereInertia);
+      btRigidBody *fallRigidBody = new btRigidBody(fallRigidBodyCI);
+      fallRigidBodies.push_back(fallRigidBody);
+      addBody(fallRigidBody);
+    }
+  }
+
+  //btCollisionShape *staticCube = new btBoxShape(btVector3(1.,1.,1.));
+  //btDefaultMotionState *cubeMotionState = new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0,0,0)));
+  //btRigidBody::btRigidBodyConstructionInfo cubeRigidBodyCI(0, cubeMotionState, staticCube, btVector3(0,0,0));
+  //btRigidBody *cubeRigidBody = new btRigidBody(cubeRigidBodyCI);
+  //addBody(cubeRigidBody);
+
 }
 
 void OsApp::contextInit()
@@ -268,6 +296,8 @@ void OsApp::contextInit()
 
 void OsApp::preFrame()
 {
+  dynamicsWorld->stepSimulation(1./240.);
+
   // Update the grabbing state
   updateGrabbing();
   // Update the state of navigation
@@ -454,8 +484,9 @@ void OsApp::draw()
   glMatrixMode(GL_MODELVIEW);
   if (mFramesToSleep > 0) return;
 
-  dynamicsWorld->stepSimulation(1./60.);
+  glPushMatrix();
 
+  glMultMatrixf(mNavMatrix.mData);
   //glPushMatrix();
   //  glColor3f(0.3f, 0.3f, 0.3f);
   //  glBegin(GL_QUADS);
@@ -532,14 +563,14 @@ void OsApp::draw()
   {
     float mat[16];
     btTransform t;
-    tableInstRigidBody->getMotionState()->getWorldTransform(t);
+    tableinst->getBody()->getMotionState()->getWorldTransform(t);
     t.getOpenGLMatrix(mat);
     glMultMatrixf(mat);
   }
     //glMultMatrixf(tableinst->getTrans().mData);
     //glScalef(1./0.02f, 1./0.03f, 1./0.02f);
     btVector3 aamin, aamax;
-    tableInstShape->getAabb(btTransform::getIdentity(), aamin, aamax);
+    tableinst->getBody()->getCollisionShape()->getAabb(btTransform::getIdentity(), aamin, aamax);
     glColor3f(255.0f, 0.f, 0.f);
     glBegin(GL_LINE_STRIP);
       glVertex3f(aamin[0], aamin[1], aamin[2]);
@@ -569,13 +600,38 @@ void OsApp::draw()
   {
     float mat[16];
     btTransform t;
-    fallRigidBody->getMotionState()->getWorldTransform(t);
+    scow->getBody()->getMotionState()->getWorldTransform(t);
     t.getOpenGLMatrix(mat);
     glMultMatrixf(mat);
   }
     glScalef(0.00009f, 0.00009f, 0.00009f);
     //glMultMatrixf(scow->getTrans().mData);
     scow->draw_model();
+  glPopMatrix();
+
+  glPushMatrix();
+  {
+    float mat[16];
+    btTransform t;
+    scow->getBody()->getMotionState()->getWorldTransform(t);
+    t.getOpenGLMatrix(mat);
+    glMultMatrixf(mat);
+  }
+    //glMultMatrixf(tableinst->getTrans().mData);
+    //glScalef(1./0.02f, 1./0.03f, 1./0.02f);
+    btVector3 faamin, faamax;
+    scow->getBody()->getCollisionShape()->getAabb(btTransform::getIdentity(), faamin, faamax);
+    glColor3f(255.0f, 0.f, 0.f);
+    glBegin(GL_LINE_STRIP);
+      glVertex3f(faamin[0], faamin[1], faamin[2]);
+      glVertex3f(faamax[0], faamax[1], faamax[2]);
+      glVertex3f(faamax[0], faamax[1], faamin[2]);
+      glVertex3f(faamin[0], faamax[1], faamin[2]);
+      glVertex3f(faamin[0], faamax[1], faamax[2]);
+      glVertex3f(faamax[0], faamin[1], faamin[2]);
+      //glVertex3f(-1.f, -1.f, -1.f);
+      //glVertex3f(1.f, 1.f, 1.f);
+    glEnd();
   glPopMatrix();
 
   glPushMatrix();
@@ -633,6 +689,22 @@ void OsApp::draw()
   glPushMatrix();
     glMultMatrixf(mNavMatrix.mData);
     drawSphere(mSphere, mSphereIsect, mSphereSelected);
+  glPopMatrix();
+
+  for(int i=0; i<fallRigidBodies.size(); ++i)
+  {
+    glPushMatrix();
+    {
+      float mat[16];
+      btTransform t;
+      fallRigidBodies[i]->getMotionState()->getWorldTransform(t);
+      t.getOpenGLMatrix(mat);
+      glMultMatrixf(mat);
+    }
+      gluSphere(mSphereQuad, 0.02, 10, 10);
+    glPopMatrix();
+  }
+
   glPopMatrix();
 
   //moteur->draw_waabox();

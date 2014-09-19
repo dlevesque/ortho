@@ -23,6 +23,8 @@
 #include <gmtl/Xforms.h>
 #include <gmtl/Ray.h>
 
+#include <btBulletDynamicsCommon.h>
+
 std::string doubleSlash(std::string s);
 std::string remplacerSlash(std::string s);
 std::vector<std::string> splitSpace(std::string s);
@@ -147,6 +149,18 @@ public:
     }
     return waabox;
   }
+  void setBody(btRigidBody *b)
+  {
+    bulletBody = b;
+  }
+  btRigidBody* getBody() const
+  {
+    return bulletBody;
+  }
+  void zeroBullet()
+  {
+    bulletBody = 0;
+  }
 private:
   void comp_waabox();
   GLuint texture;
@@ -158,6 +172,8 @@ private:
   bool sel;
   gmtl::Matrix44f transf;
   gmtl::Matrix44f postTransf;
+
+  btRigidBody *bulletBody;
 
   GLfloat min_x, max_x, min_y, max_y, min_z, max_z;
 
