@@ -144,11 +144,11 @@ void OsApp::init()
   //MeshObj dummy("tableinst.obj");
   //dummy.addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(82.f), y_axis)));
   //dummy.addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(300.0f*0.02, -10.0f*0.03, 744.0f*0.02)));
-  gmtl::Matrix44f tableInstT = tableinst->getTrans();
+  //gmtl::Matrix44f tableInstT = tableinst->getTrans();
   //btMatrix3x3 tableInstRot;
   //btVector3 tableInstTransl;
   //std::cout << "centre ";
-  gmtl::Point3f trCentre = tableInstT * gmtl::Point3f(tableinst->center[0],tableinst->center[1],tableinst->center[2]);
+  //gmtl::Point3f trCentre = tableInstT * gmtl::Point3f(tableinst->center[0],tableinst->center[1],tableinst->center[2]);
   //for(int i=0; i<3; ++i)
   //{
   //  for(int j=0; j<3; ++j)
@@ -159,13 +159,13 @@ void OsApp::init()
   //  std::cout << tableInstTransl[i] << ' ';
   //}
   //std::cout << std::endl;
-  std::cout << "centre transformé ";
-  for(int i=0; i<3; ++i) std::cout << trCentre[i] << ' ';
-  std::cout << std::endl;
+  //std::cout << "centre transformé ";
+  //for(int i=0; i<3; ++i) std::cout << trCentre[i] << ' ';
+  //std::cout << std::endl;
   //btDefaultMotionState* tableInstMotionState =
   //              new btDefaultMotionState(btTransform(tableInstRot, tableInstTransl));
   btDefaultMotionState* tableInstMotionState =
-                new btDefaultMotionState(btTransform(btQuaternion(gmtl::Math::deg2Rad(82.f),0,0), btVector3(trCentre[0],trCentre[1],trCentre[2])));
+                new btDefaultMotionState(btTransform(btQuaternion(gmtl::Math::deg2Rad(82.f),0,0), btVector3(tableinst->trCentre()[0],tableinst->trCentre()[1],tableinst->trCentre()[2])));
   btRigidBody::btRigidBodyConstructionInfo tableInstRigidBodyCI(0, tableInstMotionState, tableInstShape, btVector3(0,0,0));
   tableInstRigidBody = new btRigidBody(tableInstRigidBodyCI);
   addBody(tableInstRigidBody);
@@ -184,6 +184,8 @@ void OsApp::init()
   platte->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(5.0f), y_axis )));
   platte->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(30790.0f*0.0001,26999.0f*0.0001,-5500.0f*0.0001)));
 
+  std::cout << "scow ";
+  scow->print();
   scow->addTransf(gmtl::makeScale<gmtl::Matrix44f, float>(0.00009f));
   scow->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
   scow->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009,72209.0f*0.00009,0.0f*0.00009)));
@@ -191,19 +193,21 @@ void OsApp::init()
   dy = scow->aabox.mMax[1] - scow->aabox.mMin[1];
   dz = scow->aabox.mMax[2] - scow->aabox.mMin[2];
   fallShape = new btBoxShape(btVector3(dx*0.00009/2, dy*0.00009/2, dz*0.00009/2));
-  gmtl::Matrix44f scowt = scow->getTrans();
-  btMatrix3x3 rot;
-  btVector3 transl;
-  for(int i=0; i<3; ++i)
-  {
-    for(int j=0; j<3; ++j)
-    {
-      rot[i][j] = scowt[i][j];
-    }
-    transl[i] = scowt[i][3];
-  }
+  //gmtl::Matrix44f scowt = scow->getTrans();
+  //btMatrix3x3 rot;
+  //btVector3 transl;
+  //for(int i=0; i<3; ++i)
+  //{
+  //  for(int j=0; j<3; ++j)
+  //  {
+  //    rot[i][j] = scowt[i][j];
+  //  }
+  //  transl[i] = scowt[i][3];
+  //}
+  //btDefaultMotionState* fallMotionState =
+  //              new btDefaultMotionState(btTransform(rot, transl));
   btDefaultMotionState* fallMotionState =
-                new btDefaultMotionState(btTransform(rot, transl));
+                new btDefaultMotionState(btTransform(btQuaternion(0,0,gmtl::Math::deg2Rad(90.f)), btVector3(scow->trCentre()[0],scow->trCentre()[1],scow->trCentre()[2])));
   btScalar mass = 100.f;
   btVector3 fallInertia(0, 0, 0);
   fallShape->calculateLocalInertia(mass, fallInertia);
@@ -211,15 +215,8 @@ void OsApp::init()
   fallRigidBody = new btRigidBody(fallRigidBodyCI);
   addBody(fallRigidBody);
   scow->setBody(fallRigidBody);
-
-  //float mat[16];
-  //btTransform t;
-  //fallRigidBody->getMotionState()->getWorldTransform(t);
-  //t.getOpenGLMatrix(mat);
-  //for(int i=0; i<16; ++i) std::cout << mat[i] << ' ';
-  //std::cout << std::endl;
-  //for(int i=0; i<16; ++i) std::cout << scow->getTrans().mData[i] << ' ';
-  //std::cout << std::endl;
+  //scow->printBodyMatrix();
+  //scow->printTransf();
 
   scow1->addTransf(gmtl::makeScale<gmtl::Matrix44f, float>(0.00009f));
   scow1->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
@@ -559,30 +556,7 @@ void OsApp::draw()
     tableinst->draw_model();
   glPopMatrix();
 
-  glPushMatrix();
-  {
-    float mat[16];
-    btTransform t;
-    tableinst->getBody()->getMotionState()->getWorldTransform(t);
-    t.getOpenGLMatrix(mat);
-    glMultMatrixf(mat);
-  }
-    //glMultMatrixf(tableinst->getTrans().mData);
-    //glScalef(1./0.02f, 1./0.03f, 1./0.02f);
-    btVector3 aamin, aamax;
-    tableinst->getBody()->getCollisionShape()->getAabb(btTransform::getIdentity(), aamin, aamax);
-    glColor3f(255.0f, 0.f, 0.f);
-    glBegin(GL_LINE_STRIP);
-      glVertex3f(aamin[0], aamin[1], aamin[2]);
-      glVertex3f(aamax[0], aamax[1], aamax[2]);
-      glVertex3f(aamax[0], aamax[1], aamin[2]);
-      glVertex3f(aamin[0], aamax[1], aamin[2]);
-      glVertex3f(aamin[0], aamax[1], aamax[2]);
-      glVertex3f(aamax[0], aamin[1], aamin[2]);
-      //glVertex3f(-1.f, -1.f, -1.f);
-      //glVertex3f(1.f, 1.f, 1.f);
-    glEnd();
-  glPopMatrix();
+  tableinst->drawBody();
 
   glPushMatrix();
     glMultMatrixf(platte->getPostTransf().mData);
@@ -609,30 +583,7 @@ void OsApp::draw()
     scow->draw_model();
   glPopMatrix();
 
-  glPushMatrix();
-  {
-    float mat[16];
-    btTransform t;
-    scow->getBody()->getMotionState()->getWorldTransform(t);
-    t.getOpenGLMatrix(mat);
-    glMultMatrixf(mat);
-  }
-    //glMultMatrixf(tableinst->getTrans().mData);
-    //glScalef(1./0.02f, 1./0.03f, 1./0.02f);
-    btVector3 faamin, faamax;
-    scow->getBody()->getCollisionShape()->getAabb(btTransform::getIdentity(), faamin, faamax);
-    glColor3f(255.0f, 0.f, 0.f);
-    glBegin(GL_LINE_STRIP);
-      glVertex3f(faamin[0], faamin[1], faamin[2]);
-      glVertex3f(faamax[0], faamax[1], faamax[2]);
-      glVertex3f(faamax[0], faamax[1], faamin[2]);
-      glVertex3f(faamin[0], faamax[1], faamin[2]);
-      glVertex3f(faamin[0], faamax[1], faamax[2]);
-      glVertex3f(faamax[0], faamin[1], faamin[2]);
-      //glVertex3f(-1.f, -1.f, -1.f);
-      //glVertex3f(1.f, 1.f, 1.f);
-    glEnd();
-  glPopMatrix();
+  scow->drawBody();
 
   glPushMatrix();
     glMultMatrixf(scow3->getPostTransf().mData);

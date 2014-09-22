@@ -115,7 +115,7 @@ Material::~Material()
 }
 
 MeshObj::MeshObj(string s,MeshObj *first)
-  : updated(true), sel(false), transf(gmtl::MAT_IDENTITY44F), postTransf(gmtl::MAT_IDENTITY44F)
+  : updated(true), sel(false), transf(gmtl::MAT_IDENTITY44F), postTransf(gmtl::MAT_IDENTITY44F), bulletBody(0)
 {
     charger_obj(s,first);
 }
@@ -544,4 +544,25 @@ void MeshObj::draw_waabox()
       glEnd();
    }
    glDisable(GL_BLEND);
+}
+void MeshObj::drawBody() const
+{
+  glPushMatrix();
+    float mat[16];
+    btTransform t;
+    getBody()->getMotionState()->getWorldTransform(t);
+    t.getOpenGLMatrix(mat);
+    glMultMatrixf(mat);
+    btVector3 aamin, aamax;
+    getBody()->getCollisionShape()->getAabb(btTransform::getIdentity(), aamin, aamax);
+    glColor3f(255.0f, 0.f, 0.f);
+    glBegin(GL_LINE_STRIP);
+      glVertex3f(aamin[0], aamin[1], aamin[2]);
+      glVertex3f(aamax[0], aamax[1], aamax[2]);
+      glVertex3f(aamax[0], aamax[1], aamin[2]);
+      glVertex3f(aamin[0], aamax[1], aamin[2]);
+      glVertex3f(aamin[0], aamax[1], aamax[2]);
+      glVertex3f(aamax[0], aamin[1], aamin[2]);
+    glEnd();
+  glPopMatrix();
 }

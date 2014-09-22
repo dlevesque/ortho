@@ -161,6 +161,26 @@ public:
   {
     bulletBody = 0;
   }
+  void printBodyMatrix() const
+  {
+    if(!bulletBody) return;
+    float mat[16];
+    btTransform t;
+    bulletBody->getMotionState()->getWorldTransform(t);
+    t.getOpenGLMatrix(mat);
+    for(int i=0; i<16; ++i) std::cout << mat[i] << ' ';
+    std::cout << std::endl;
+  }
+  void printTransf() const
+  {
+    for(int i=0; i<16; ++i) std::cout << getTrans().mData[i] << ' ';
+    std::cout << std::endl;
+  }
+  void drawBody() const;
+  gmtl::Point3f trCentre() const
+  {
+    return transf * gmtl::Point3f(center[0], center[1], center[2]);
+  }
 private:
   void comp_waabox();
   GLuint texture;
