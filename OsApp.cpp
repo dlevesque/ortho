@@ -215,8 +215,10 @@ void OsApp::init()
   fallRigidBody = new btRigidBody(fallRigidBodyCI);
   addBody(fallRigidBody);
   scow->setBody(fallRigidBody);
-  //scow->printBodyMatrix();
-  //scow->printTransf();
+  std::cout << "BodyMatrix ";
+  scow->printBodyMatrix();
+  std::cout << "Transf ";
+  scow->printTransf();
 
   scow1->addTransf(gmtl::makeScale<gmtl::Matrix44f, float>(0.00009f));
   scow1->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));

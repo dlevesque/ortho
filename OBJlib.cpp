@@ -547,6 +547,7 @@ void MeshObj::draw_waabox()
 }
 void MeshObj::drawBody() const
 {
+  if(!bulletBody) return;
   glPushMatrix();
     float mat[16];
     btTransform t;
