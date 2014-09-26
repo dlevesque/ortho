@@ -87,22 +87,22 @@ void OsApp::init()
   //ahla->make_bbox();
 
   // Qu'il neige !
-  btCollisionShape *fallSphereShape = new btSphereShape(0.02);
-  btScalar sphereMass = 100.f;
-  btVector3 fallSphereInertia(0, 0, 0);
-  fallSphereShape->calculateLocalInertia(sphereMass, fallSphereInertia);
-  for(float x = -10.f; x<10.5f; x+=0.5)
-  {
-    for(float z = -10.f; z<10.5f; z+=0.5)
-    {
-      btDefaultMotionState* fallMotionState =
-                    new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(x, 15.f, z)));
-      btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(sphereMass, fallMotionState, fallSphereShape, fallSphereInertia);
-      btRigidBody *fallRigidBody = new btRigidBody(fallRigidBodyCI);
-      fallRigidBodies.push_back(fallRigidBody);
-      addBody(fallRigidBody);
-    }
-  }
+  //btCollisionShape *fallSphereShape = new btSphereShape(0.02);
+  //btScalar sphereMass = 100.f;
+  //btVector3 fallSphereInertia(0, 0, 0);
+  //fallSphereShape->calculateLocalInertia(sphereMass, fallSphereInertia);
+  //for(float x = -2.f; x<2.1f; x+=0.1)
+  //{
+  //  for(float z = -2.f; z<2.1f; z+=0.1)
+  //  {
+  //    btDefaultMotionState* fallMotionState =
+  //                  new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(x, 10.f, z)));
+  //    btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(sphereMass, fallMotionState, fallSphereShape, fallSphereInertia);
+  //    btRigidBody *fallRigidBody = new btRigidBody(fallRigidBodyCI);
+  //    fallRigidBodies.push_back(fallRigidBody);
+  //    addBody(fallRigidBody);
+  //  }
+  //}
 }
 
 void OsApp::contextInit()
@@ -113,7 +113,8 @@ void OsApp::contextInit()
 
 void OsApp::preFrame()
 {
-  dynamicsWorld->stepSimulation(1./60.);
+  //dynamicsWorld->stepSimulation(1./60.,10,1./600.);
+  dynamicsWorld->stepSimulation(1./600.);
 
   // Update the grabbing state
   updateGrabbing();
@@ -301,11 +302,16 @@ void OsApp::draw()
   glMatrixMode(GL_MODELVIEW);
   if (mFramesToSleep > 0) return;
 
+  float mat[16];
+  btTransform t;
+
   glPushMatrix();
 
   glMultMatrixf(mNavMatrix.mData);
+
+  // plancher
   glPushMatrix();
-    glColor3f(0.3f, 0.3f, 0.3f);
+    glColor3f(0.1f, 0.1f, 0.1f);
     glBegin(GL_QUADS);
       glVertex3f(-100.f, 0.f, -100.f);
       glVertex3f(-100.f, 0.f,  100.f);
@@ -361,10 +367,10 @@ void OsApp::draw()
   //  gluSphere(mSphereQuad, 1.0f, 15, 15);
   //glPopMatrix();
 
-  //glPushMatrix();
-  //  glMultMatrixf(table1->getTrans().mData);
-  //  table1->draw_model();
-  //glPopMatrix();
+  glPushMatrix();
+    glMultMatrixf(table1->getTrans().mData);
+    table1->draw_model();
+  glPopMatrix();
 
   //glPushMatrix();
   //  glMultMatrixf(table2->getTrans().mData);
@@ -378,11 +384,11 @@ void OsApp::draw()
 
   tableinst->drawBody();
 
-  glPushMatrix();
-    glMultMatrixf(platte->getPostTransf().mData);
-    glMultMatrixf(platte->getTrans().mData);
-    platte->draw_model();
-  glPopMatrix();
+  //glPushMatrix();
+  //  glMultMatrixf(platte->getPostTransf().mData);
+  //  glMultMatrixf(platte->getTrans().mData);
+  //  platte->draw_model();
+  //glPopMatrix();
 
   //glPushMatrix();
   //  glMultMatrixf(scow->getPostTransf().mData);
@@ -396,8 +402,6 @@ void OsApp::draw()
     if(body)
     {
       glPushMatrix();
-        float mat[16];
-        btTransform t;
         body->getMotionState()->getWorldTransform(t);
         t.getOpenGLMatrix(mat);
         glMultMatrixf(mat);
@@ -415,6 +419,7 @@ void OsApp::draw()
   cube1->drawBody();
   cube2->drawBody();
   table1->drawBody();
+  platte->drawBody();
 
   //glPushMatrix();
   //  glMultMatrixf(scow1->getPostTransf().mData);
@@ -476,28 +481,23 @@ void OsApp::draw()
   for(int i=0; i<fallRigidBodies.size(); ++i)
   {
     glPushMatrix();
-    {
-      float mat[16];
-      btTransform t;
       fallRigidBodies[i]->getMotionState()->getWorldTransform(t);
       t.getOpenGLMatrix(mat);
       glMultMatrixf(mat);
-    }
       gluSphere(mSphereQuad, 0.02, 10, 10);
     glPopMatrix();
   }
 
   glPushMatrix();
-  {
-    float mat[16];
-    btTransform t;
     femur8->getBody()->getMotionState()->getWorldTransform(t);
     t.getOpenGLMatrix(mat);
     glMultMatrixf(mat);
-  }
-    glColor3f(1.f, 1.f, 0.6f);
+    glColor3f(0.8f, 0.8f, 0.5f);
+    btVector3 aabbMin, aabbMax;
+    femur8->getBody()->getCollisionShape()->getAabb(btTransform::getIdentity(), aabbMin, aabbMax);
     glRotatef(90.f, 1.f, 0.f, 0.f);
-    gluCylinder(mSphereQuad, 1.f, 1.f, 6.f, 10, 10);
+    glTranslatef(0.f,0.f,aabbMin[1]);
+    gluCylinder(mSphereQuad, aabbMax[0], aabbMax[0], 2.f*aabbMax[1], 10, 10);
   glPopMatrix();
 
   glPopMatrix();
@@ -772,9 +772,9 @@ void OsApp::addFemur()
   femur8->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(-78.0f), y_axis )));
   femur8->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(280.0f*0.0023,1230.0f*0.0023,2600.0f*0.0023)));
 
-  btCollisionShape *shape = new btCylinderShape(btVector3(1.f,3.f,1.f));
+  btCollisionShape *shape = new btCylinderShape(btVector3(0.06f,0.7f,1.f));
   btDefaultMotionState *state =
-    new btDefaultMotionState(btTransform(btQuaternion(0.f,0.f,gmtl::Math::deg2Rad(90.f)), btVector3(0.f,3.f,0.f)));
+    new btDefaultMotionState(btTransform(btQuaternion(gmtl::Math::deg2Rad(5.f),0.f,gmtl::Math::deg2Rad(91.f)), btVector3(0.5f,2.6f,0.21f)));
   btRigidBody::btRigidBodyConstructionInfo rbCI(0.f, state, shape, btVector3(0.f, 0.f, 0.f));
   btRigidBody *rb = new btRigidBody(rbCI);
   addBody(rb);
@@ -795,9 +795,9 @@ void OsApp::addTable1()
   //btCollisionShape *tableShape = new btBoxShape(btVector3(dx*0.06/2, dy*0.06/2, dz*0.06/2));
   //btDefaultMotionState* tableMotionState =
   //              new btDefaultMotionState(btTransform(btQuaternion(gmtl::Math::deg2Rad(230.f),0,0), btVector3(table1->trCentre()[0],table1->trCentre()[1],table1->trCentre()[2])));
-  btCollisionShape *tableShape = new btBoxShape(btVector3(109.f*0.06/2, 2.f*0.06/2, 30.f*0.06/2));
+  btCollisionShape *tableShape = new btBoxShape(btVector3(109.f*0.06/2, 10.f*0.06/2, 30.f*0.06/2));
   btDefaultMotionState* tableMotionState =
-                new btDefaultMotionState(btTransform(btQuaternion(gmtl::Math::deg2Rad(185.f),0,0), btVector3(-0.5f,37.5f*0.06,0.f)));
+                new btDefaultMotionState(btTransform(btQuaternion(gmtl::Math::deg2Rad(185.f),0,0), btVector3(-0.5f,33.8f*0.06,0.f)));
   btRigidBody::btRigidBodyConstructionInfo tableRigidBodyCI(0, tableMotionState, tableShape, btVector3(0,0,0));
   btRigidBody *tableRigidBody = new btRigidBody(tableRigidBodyCI);
   addBody(tableRigidBody);
@@ -898,10 +898,26 @@ void OsApp::addPlaque()
   platte = new MeshObj("platte.obj");
   platte->make_bbox();
   selectable.push_back(platte);
-  platte->addTransf(gmtl::makeScale<gmtl::Matrix44f,float>(0.0001f));
+  platte->initTr(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-platte->center[0],-platte->center[1],-platte->center[2])));
+  platte->setScale(0.0001f);
   platte->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(79.0f), x_axis )));
   platte->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(5.0f), y_axis )));
-  platte->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(30790.0f*0.0001,26999.0f*0.0001,-5500.0f*0.0001)));
+  //platte->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(30790.0f*0.0001,76999.0f*0.0001,-5500.0f*0.0001)));
+  platte->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(0.5f,2.7f,0.1f)));
+  float dx, dy, dz;
+  dx = platte->aabox.mMax[0] - platte->aabox.mMin[0];
+  dy = platte->aabox.mMax[1] - platte->aabox.mMin[1];
+  dz = platte->aabox.mMax[2] - platte->aabox.mMin[2];
+  btCollisionShape *fallShape = new btBoxShape(btVector3(dx*0.0001/2, dy*0.0001/2, dz*0.0001/2));
+  btDefaultMotionState* fallMotionState =
+    new btDefaultMotionState(btTransform(btQuaternion(0.f,gmtl::Math::deg2Rad(90.f),0.f), btVector3(platte->trCentre()[0],platte->trCentre()[1],platte->trCentre()[2])));
+  btScalar mass = 300.f;
+  btVector3 fallInertia(0, 0, 0);
+  fallShape->calculateLocalInertia(mass, fallInertia);
+  btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass, fallMotionState, fallShape, fallInertia);
+  btRigidBody *fallRigidBody = new btRigidBody(fallRigidBodyCI);
+  addBody(fallRigidBody);
+  platte->setBody(fallRigidBody);
 }
 
 void OsApp::addVis()
@@ -934,7 +950,7 @@ void OsApp::addVis()
   //btDefaultMotionState* fallMotionState =
   //              new btDefaultMotionState(btTransform(rot, transl));
   btDefaultMotionState* fallMotionState =
-                new btDefaultMotionState(btTransform(btQuaternion(0,0,gmtl::Math::deg2Rad(90.f)), btVector3(scow->trCentre()[0],scow->trCentre()[1],scow->trCentre()[2])));
+    new btDefaultMotionState(btTransform(btQuaternion(0,0,gmtl::Math::deg2Rad(90.f)), btVector3(scow->trCentre()[0],scow->trCentre()[1],scow->trCentre()[2])));
   btScalar mass = 100.f;
   btVector3 fallInertia(0, 0, 0);
   fallShape->calculateLocalInertia(mass, fallInertia);

@@ -559,11 +559,15 @@ void MeshObj::drawBody() const
     glColor3f(255.0f, 0.f, 0.f);
     glBegin(GL_LINE_STRIP);
       glVertex3f(aamin[0], aamin[1], aamin[2]);
-      glVertex3f(aamax[0], aamax[1], aamax[2]);
-      glVertex3f(aamax[0], aamax[1], aamin[2]);
-      glVertex3f(aamin[0], aamax[1], aamin[2]);
-      glVertex3f(aamin[0], aamax[1], aamax[2]);
       glVertex3f(aamax[0], aamin[1], aamin[2]);
+      glVertex3f(aamax[0], aamin[1], aamax[2]);
+      glVertex3f(aamin[0], aamin[1], aamax[2]);
+      glVertex3f(aamin[0], aamin[1], aamin[2]);
+      glVertex3f(aamin[0], aamax[1], aamin[2]);
+      glVertex3f(aamax[0], aamax[1], aamin[2]);
+      glVertex3f(aamax[0], aamax[1], aamax[2]);
+      glVertex3f(aamin[0], aamax[1], aamax[2]);
+      glVertex3f(aamin[0], aamax[1], aamin[2]);
     glEnd();
   glPopMatrix();
 }
