@@ -115,7 +115,7 @@ Material::~Material()
 }
 
 MeshObj::MeshObj(string s,MeshObj *first)
-  : updated(true), sel(false), transf(gmtl::MAT_IDENTITY44F), postTransf(gmtl::MAT_IDENTITY44F), bulletBody(0)
+: updated(true), sel(false), transf(gmtl::MAT_IDENTITY44F), postTransf(gmtl::MAT_IDENTITY44F), initTransf(gmtl::MAT_IDENTITY44F), scale(gmtl::Vec3f(1.f,1.f,1.f)), bulletBody(0)
 {
     charger_obj(s,first);
 }

@@ -127,6 +127,10 @@ public:
     updated = false;
   }
   void addPostTransf(const gmtl::Matrix44f& in);
+  void initTr(const gmtl::Matrix44f& in)
+  {
+    initTransf = in;
+  }
   const gmtl::Matrix44f& getTrans() const
   {
     return transf;
@@ -134,6 +138,10 @@ public:
   const gmtl::Matrix44f& getPostTransf() const
   {
     return postTransf;
+  }
+  const gmtl::Matrix44f& getInitTransf() const
+  {
+    return initTransf;
   }
   void select(bool s = true) {sel = s;}
   bool isSelected() const {return sel;}
@@ -181,6 +189,20 @@ public:
   {
     return transf * gmtl::Point3f(center[0], center[1], center[2]);
   }
+  void setScale(gmtl::Vec3f sc)
+  {
+    scale = sc;
+    addTransf(gmtl::makeScale<gmtl::Matrix44f, gmtl::Vec3f>(scale));
+  }
+  void setScale(float sc)
+  {
+    scale = gmtl::Vec3f(sc,sc,sc);
+    addTransf(gmtl::makeScale<gmtl::Matrix44f, gmtl::Vec3f>(scale));
+  }
+  const gmtl::Vec3f& getScale() const
+  {
+    return scale;
+  }
 private:
   void comp_waabox();
   GLuint texture;
@@ -190,8 +212,10 @@ private:
   bool updated;
 
   bool sel;
-  gmtl::Matrix44f transf;
-  gmtl::Matrix44f postTransf;
+  gmtl::Matrix44f transf;      // transformation initiale
+  gmtl::Matrix44f postTransf;  // déplacement de l'objet par l'usager
+  gmtl::Matrix44f initTransf;  // sert à recentrer le modèle à l'origine (translation)
+  gmtl::Vec3f scale;
 
   btRigidBody *bulletBody;
 

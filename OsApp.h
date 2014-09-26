@@ -64,6 +64,9 @@ public:
     , mSphereIsect(false)
     , mSphereSelected(false)
     , mFramesToSleep(25)
+    , x_axis(gmtl::Vec3f(1.f,0.f,0.f))
+    , y_axis(gmtl::Vec3f(0.f,1.f,0.f))
+    , z_axis(gmtl::Vec3f(0.f,0.f,1.f))
     //, mTestRunner(NULL)
   {
     initShapes();
@@ -72,6 +75,9 @@ public:
   virtual ~OsApp()
   {
     gluDeleteQuadric(mSphereQuad);
+
+    selectable.clear();
+    fallRigidBodies.clear();
 
     delete femur8;
     delete table1;
@@ -87,6 +93,24 @@ public:
     delete cube1;
     delete cube2;
     delete verb;
+
+    for(int i=0; i<bodies.size(); ++i)
+    {
+      dynamicsWorld->removeCollisionObject(bodies[i]);
+      btMotionState *motionState = bodies[i]->getMotionState();
+      btCollisionShape *shape = bodies[i]->getCollisionShape();
+      delete bodies[i];
+      delete shape;
+      delete motionState;
+    }
+
+    bodies.clear();
+
+    delete dynamicsWorld;
+    delete solver;
+    delete dispatcher;
+    delete collisionConfiguration;
+    delete broadphase;
   }
 
   virtual void init();
@@ -143,8 +167,6 @@ private:
   //void InitBulletPhysics();
   //void ExitBulletPhysics();
 
-  std::vector<MeshObj*> selectable;
-
   gadget::PositionInterface mHead;
   gadget::PositionInterface mWand;
   gadget::DigitalInterface  mForwardButton;       /**< Button to go forward */
@@ -166,6 +188,8 @@ private:
 
   unsigned int mFramesToSleep;         /**< Number of frames to sleep at start up */
 
+  float theta;
+
   MeshObj *femur8;
   MeshObj *table1;
   MeshObj *table2;
@@ -183,7 +207,7 @@ private:
 
   MeshObj *selected;
 
-  float theta;
+  std::vector<MeshObj*> selectable;
 
   //Bullet Physics
   btBroadphaseInterface *broadphase;
@@ -191,11 +215,11 @@ private:
   btCollisionDispatcher *dispatcher;
   btSequentialImpulseConstraintSolver *solver;
   btDiscreteDynamicsWorld *dynamicsWorld;
-  btCollisionShape *groundShape;
-  btCollisionShape *fallShape;
-  btRigidBody* fallRigidBody;
-  btCollisionShape *tableInstShape;
-  btRigidBody* tableInstRigidBody;
+  //btCollisionShape *groundShape;
+  //btCollisionShape *fallShape;
+  //btRigidBody* fallRigidBody;
+  //btCollisionShape *tableInstShape;
+  //btRigidBody* tableInstRigidBody;
   std::vector<btRigidBody*> bodies;
   std::vector<btRigidBody*> fallRigidBodies;
 
@@ -204,6 +228,28 @@ private:
     dynamicsWorld->addRigidBody(body);
     bodies.push_back(body);
   }
+
+  void initPhysics();
+  void addGround();
+
+  void addFemur();
+  void addTable1();
+  void addTable2();
+  void addTableInst();
+  void addMoteur();
+  void addMeche();
+  void addPlaque();
+  void addVis();
+  void addVis1();
+  void addVis2();
+  void addVis3();
+  void addCube1();
+  void addCube2();
+  void addVerb();
+
+  const gmtl::Vec3f x_axis;
+  const gmtl::Vec3f y_axis;
+  const gmtl::Vec3f z_axis;
 
   //vrj::test::TestRunner*  mTestRunner;
 
