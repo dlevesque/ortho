@@ -94,6 +94,8 @@ public:
     delete cube2;
     delete verb;
 
+    if(m_pickConstraint) delete m_pickConstraint;
+
     for(int i=0; i<bodies.size(); ++i)
     {
       dynamicsWorld->removeCollisionObject(bodies[i]);
@@ -145,7 +147,7 @@ protected:
   void updateLogger();
 
 private:
-  void detIntersection();
+  void detIntersection(const btVector3&);
 
   void initShapes();
 
@@ -215,11 +217,9 @@ private:
   btCollisionDispatcher *dispatcher;
   btSequentialImpulseConstraintSolver *solver;
   btDiscreteDynamicsWorld *dynamicsWorld;
-  //btCollisionShape *groundShape;
-  //btCollisionShape *fallShape;
-  //btRigidBody* fallRigidBody;
-  //btCollisionShape *tableInstShape;
-  //btRigidBody* tableInstRigidBody;
+
+  btTypedConstraint *m_pickConstraint;
+
   std::vector<btRigidBody*> bodies;
   std::vector<btRigidBody*> fallRigidBodies;
 
@@ -229,6 +229,16 @@ private:
     bodies.push_back(body);
   }
 
+  btVector3 gmtl2btVector(const gmtl::Point3f& p) const
+  {
+    return btVector3(btScalar(p.mData[0]), btScalar(p.mData[1]), btScalar(p.mData[2]));
+  }
+
+  gmtl::Point3f btVector2gmtlPoint(const btVector3& v) const
+  {
+    return gmtl::Point3f(v.x(),v.y(),v.z());
+  }
+
   void initPhysics();
   void addGround();
 
@@ -236,8 +246,9 @@ private:
   void addTable1();
   void addTable2();
   void addTableInst();
-  void addMoteur();
-  void addMeche();
+  //void addMoteur();
+  //void addMeche();
+  void addPerceuse();
   void addPlaque();
   void addVis();
   void addVis1();

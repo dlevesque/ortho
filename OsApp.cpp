@@ -65,8 +65,9 @@ void OsApp::init()
   addTable1();
   addTable2();
   addTableInst();
-  addMoteur();
-  addMeche();
+  //addMoteur();
+  //addMeche();
+  addPerceuse();
   addPlaque();
   addVis();
   addVis1();
@@ -113,8 +114,8 @@ void OsApp::contextInit()
 
 void OsApp::preFrame()
 {
-  //dynamicsWorld->stepSimulation(1./60.,10,1./600.);
-  dynamicsWorld->stepSimulation(1./600.);
+  dynamicsWorld->stepSimulation(1./60.,10,1./600.);
+  //dynamicsWorld->stepSimulation(1./60.);
 
   // Update the grabbing state
   updateGrabbing();
@@ -136,13 +137,37 @@ void OsApp::preFrame()
   //}
 }
 
-void OsApp::detIntersection()
+void OsApp::detIntersection(const btVector3& pos)
 {
+  btVector3 aabbMin, aabbMax;
   for(int i=0; i<selectable.size(); ++i)
   {
-    if(gmtl::intersect(selectable[i]->getWaabox(), mSphere))
+    bool intersect;
+    if(selectable[i]->getBody())
     {
+      selectable[i]->getBody()->getAabb(aabbMin,aabbMax);
+      intersect = gmtl::intersect(gmtl::AABoxf(btVector2gmtlPoint(aabbMin),btVector2gmtlPoint(aabbMax)), mSphere);
+    }
+    else
+    {
+      intersect = gmtl::intersect(selectable[i]->getWaabox(), mSphere);
+    }
+    if(intersect)
+    {
+      std::cout << "intersection ";
       selected=selectable[i];
+      if(selected->getBody())
+      {
+        std::cout << "constraint ";
+        selected->getBody()->setActivationState(DISABLE_DEACTIVATION);
+        btVector3 pivot = selected->getBody()->getCenterOfMassTransform().inverse() * pos;
+        btPoint2PointConstraint *p2p = new btPoint2PointConstraint(*(selected->getBody()), pivot);
+        dynamicsWorld->addConstraint(p2p,true);
+        m_pickConstraint = p2p;
+        //std::cout << p2p->m_setting.m_damping << ' ' << p2p->m_setting.m_impulseClamp << ' ' << p2p->m_setting.m_tau << ' ';
+        //p2p->m_setting.m_impulseClamp = 30.f;
+        //p2p->m_setting.m_tau = 0.001f;
+      }
       return;
     }
   }
@@ -158,6 +183,7 @@ void OsApp::updateGrabbing()
 
   // Get the point in space where the wand is located
   gmtl::Point3f wand_pt = gmtl::makeTrans<gmtl::Point3f>(wand_matrix);
+  static gmtl::Point3f old_wand_pt;
 
   mSphere.setCenter(wand_pt);
   mSphere.setRadius(0.1f); //0.02f
@@ -172,6 +198,15 @@ void OsApp::updateGrabbing()
     //  theta = 0.f;
     //}
     mSphereSelected = false;
+    if(m_pickConstraint)
+    {
+      dynamicsWorld->removeConstraint(m_pickConstraint);
+      delete m_pickConstraint;
+      m_pickConstraint = 0;
+      std::cout << "drop ";
+      selected->getBody()->forceActivationState(ACTIVE_TAG);
+      selected->getBody()->setDeactivationTime(0.f);
+    }
     selected = 0;
     return;
   }
@@ -185,14 +220,32 @@ void OsApp::updateGrabbing()
       return;
     }
     // Détecter quel objet on veut saisir
-    detIntersection();
+    detIntersection(gmtl2btVector(wand_pt));
     if(!selected)
     {
       return;
     }
+    old_wand_pt = wand_pt;
   }
 
-  selected->addPostTransf(wand_matrix);
+  if(m_pickConstraint)
+  {
+#if 1
+    btPoint2PointConstraint *pickCon = static_cast<btPoint2PointConstraint*>(m_pickConstraint);
+    //btVector3 pivot = selected->getBody()->getCenterOfMassTransform().inverse() * gmtl2btVector(wand_pt);
+    btVector3 pivot = gmtl2btVector(wand_pt);
+    pickCon->setPivotB(pivot);
+#else
+    btVector3 oldOrg = selected->getBody()->getWorldTransform().getOrigin();
+    btVector3 newOrg = oldOrg + gmtl2btVector(wand_pt - old_wand_pt);
+    selected->getBody()->getWorldTransform().setOrigin(newOrg);
+    old_wand_pt = wand_pt;
+#endif
+  }
+  else
+  {
+    selected->addPostTransf(wand_matrix);
+  }
 
   if(selected==moteur)
   {
@@ -382,8 +435,6 @@ void OsApp::draw()
     tableinst->draw_model();
   glPopMatrix();
 
-  tableinst->drawBody();
-
   //glPushMatrix();
   //  glMultMatrixf(platte->getPostTransf().mData);
   //  glMultMatrixf(platte->getTrans().mData);
@@ -420,6 +471,7 @@ void OsApp::draw()
   cube2->drawBody();
   table1->drawBody();
   platte->drawBody();
+  tableinst->drawBody();
 
   //glPushMatrix();
   //  glMultMatrixf(scow1->getPostTransf().mData);
@@ -467,11 +519,11 @@ void OsApp::draw()
     femur8->draw_model();
   glPopMatrix();
 
-  glPushMatrix();
-    glMultMatrixf(verb->getPostTransf().mData);
-    glMultMatrixf(verb->getTrans().mData);
-    verb->draw_model(); 
-  glPopMatrix();
+  //glPushMatrix();
+  //  glMultMatrixf(verb->getPostTransf().mData);
+  //  glMultMatrixf(verb->getTrans().mData);
+  //  verb->draw_model(); 
+  //glPopMatrix();
 
   glPushMatrix();
     glMultMatrixf(mNavMatrix.mData);
@@ -503,6 +555,7 @@ void OsApp::draw()
   glPopMatrix();
 
   //moteur->draw_waabox();
+  //scow->draw_waabox();
 }
 
 //void OsApp::initFmod()
@@ -823,11 +876,12 @@ void OsApp::addTableInst()
   //  tableinst->aabox.mMax[0] << ' ' << tableinst->aabox.mMax[1] << ' ' << tableinst->aabox.mMax[2] << ' ' << std::endl;
   //std::cout << "tableinst " << tableinst->getWaabox().mMin[0] << ' ' << tableinst->getWaabox().mMin[1] << ' ' << tableinst->getWaabox().mMin[2] << ' ' <<
   //  tableinst->getWaabox().mMax[0] << ' ' << tableinst->getWaabox().mMax[1] << ' ' << tableinst->getWaabox().mMax[2] << ' ' << std::endl;
-  float dx, dy, dz;
-  dx = tableinst->aabox.mMax[0] - tableinst->aabox.mMin[0];
-  dy = tableinst->aabox.mMax[1] - tableinst->aabox.mMin[1];
-  dz = tableinst->aabox.mMax[2] - tableinst->aabox.mMin[2];
-  btCollisionShape *tableInstShape = new btBoxShape(btVector3(dx*0.02/2, dy*0.03/2, dz*0.02/2));
+  //float dx, dy, dz;
+  //dx = tableinst->aabox.mMax[0] - tableinst->aabox.mMin[0];
+  //dy = tableinst->aabox.mMax[1] - tableinst->aabox.mMin[1];
+  //dz = tableinst->aabox.mMax[2] - tableinst->aabox.mMin[2];
+  //btCollisionShape *tableInstShape = new btBoxShape(btVector3(dx*0.02/2, dy*0.03/2, dz*0.02/2));
+  btCollisionShape *tableInstShape = new btBoxShape(btVector3(1.f, 1.5f, 0.7f));
   //MeshObj dummy("tableinst.obj");
   //dummy.addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(82.f), y_axis)));
   //dummy.addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(300.0f*0.02, -10.0f*0.03, 744.0f*0.02)));
@@ -852,7 +906,9 @@ void OsApp::addTableInst()
   //btDefaultMotionState* tableInstMotionState =
   //              new btDefaultMotionState(btTransform(tableInstRot, tableInstTransl));
   btDefaultMotionState* tableInstMotionState =
-                new btDefaultMotionState(btTransform(btQuaternion(gmtl::Math::deg2Rad(82.f),0,0), btVector3(tableinst->trCentre()[0],tableinst->trCentre()[1],tableinst->trCentre()[2])));
+                new btDefaultMotionState(btTransform(btQuaternion(gmtl::Math::deg2Rad(95.f),0,0), btVector3(tableinst->trCentre()[0],tableinst->trCentre()[1],tableinst->trCentre()[2])));
+  //btDefaultMotionState* tableInstMotionState =
+  //              new btDefaultMotionState(btTransform(btQuaternion(gmtl::Math::deg2Rad(82.f),0,0), btVector3(tableinst->trCentre()[0],tableinst->trCentre()[1],tableinst->trCentre()[2])));
   btRigidBody::btRigidBodyConstructionInfo tableInstRigidBodyCI(0, tableInstMotionState, tableInstShape, btVector3(0,0,0));
   btRigidBody *tableInstRigidBody = new btRigidBody(tableInstRigidBodyCI);
   addBody(tableInstRigidBody);
@@ -867,30 +923,47 @@ void OsApp::addTableInst()
   //std::cout << std::endl;
 }
 
-void OsApp::addMoteur()
+void OsApp::addPerceuse()
 {
   moteur = new MeshObj("moteur.obj");
   moteur->make_bbox();
   selectable.push_back(moteur);
-  moteur->print();
-  std::cout << moteur->center[0] << ' ' << moteur->center[1] << ' ' << moteur->center[2] << std::endl;
-  moteur->addTransf(gmtl::makeScale<gmtl::Matrix44f,float>(0.0017f));
-  moteur->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(-10.0f), y_axis )));
-  moteur->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(150.0f), z_axis )));
-  moteur->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(80.0f), x_axis )));
-  moteur->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(2000.9f*0.0017,1750.0f*0.0017,250.0f*0.0017)));
-}
+  moteur->initTr(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-moteur->center[0],-moteur->center[1],-moteur->center[2])));
+  //moteur->print();
+  //std::cout << moteur->center[0] << ' ' << moteur->center[1] << ' ' << moteur->center[2] << std::endl;
+  moteur->setScale(0.0017f);
+  //moteur->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(-10.0f), y_axis )));
+  //moteur->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(150.0f), z_axis )));
+  //moteur->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(80.0f), x_axis )));
+  //moteur->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(2000.9f*0.0017,1750.0f*0.0017,250.0f*0.0017)));
+  float dx, dy, dz;
+  dx = moteur->aabox.mMax[0] - moteur->aabox.mMin[0];
+  dy = moteur->aabox.mMax[1] - moteur->aabox.mMin[1];
+  dz = moteur->aabox.mMax[2] - moteur->aabox.mMin[2];
+  btCollisionShape *moteurShape = new btBoxShape(btVector3(dx*0.0017/2, dy*0.0017/2, dz*0.0017/2));
 
-void OsApp::addMeche()
-{
   meche = new MeshObj("meche.obj");
   meche->make_bbox();
-  std::cout << meche->center[0] << ' ' << meche->center[1] << ' ' << meche->center[2] << std::endl;
-  meche->addTransf(gmtl::makeScale<gmtl::Matrix44f,float>(0.025f));
-  meche->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(-180.0f), x_axis )));
-  meche->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(-35.0f), z_axis )));
-  meche->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(80.0f), x_axis )));
-  meche->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(131.8f*0.025, 126.f*0.025, -4.3f*0.025)));
+  meche->initTr(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-meche->center[0],-meche->center[1],-meche->center[2])));
+  //std::cout << meche->center[0] << ' ' << meche->center[1] << ' ' << meche->center[2] << std::endl;
+  meche->setScale(0.025f);
+  //meche->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(-180.0f), x_axis )));
+  //meche->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(-35.0f), z_axis )));
+  //meche->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(80.0f), x_axis )));
+  //meche->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(131.8f*0.025, 126.f*0.025, -4.3f*0.025)));
+  dx = meche->aabox.mMax[0] - meche->aabox.mMin[0];
+  dy = meche->aabox.mMax[1] - meche->aabox.mMin[1];
+  dz = meche->aabox.mMax[2] - meche->aabox.mMin[2];
+  btCollisionShape *mecheShape = new btBoxShape(btVector3(dx*0.025/2, dy*0.025/2, dz*0.025/2));
+
+  btCompoundShape *compound = new btCompoundShape();
+  btTransform mecheTr;
+  mecheTr.setIdentity();
+  mecheTr.setOrigin(btVector3(-0.1f,0.175,-0.5325f));
+  btTransform moteurTr;
+  moteurTr.setIdentity();
+  compound->addChildShape(moteurTr, moteurShape);
+  compound->addChildShape(mecheTr, mecheShape);
 }
 
 void OsApp::addPlaque()
@@ -1084,9 +1157,24 @@ void OsApp::addVerb()
   verb = new MeshObj("verb.obj");
   verb->make_bbox();
   selectable.push_back(verb);
-  verb->addTransf(gmtl::makeScale<gmtl::Matrix44f,float>(0.000057f));
+  verb->initTr(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-verb->center[0],-verb->center[1],-verb->center[2])));
+  verb->setScale(0.000057f);
   verb->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(55.0f), x_axis )));
   verb->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(60000.0f*0.000057,48990.0f*0.000057,-16000.0f*0.000057)));
+  float dx, dy, dz;
+  dx = verb->aabox.mMax[0] - verb->aabox.mMin[0];
+  dy = verb->aabox.mMax[1] - verb->aabox.mMin[1];
+  dz = verb->aabox.mMax[2] - verb->aabox.mMin[2];
+  btCollisionShape *fallShape = new btBoxShape(btVector3(dx*0.000057/2, dy*0.000057/2, dz*0.000057/2));
+  btDefaultMotionState* fallMotionState =
+    new btDefaultMotionState(btTransform(btQuaternion(0,0,gmtl::Math::deg2Rad(55.f)), btVector3(verb->trCentre()[0],verb->trCentre()[1],verb->trCentre()[2])));
+  btScalar mass = 300.f;
+  btVector3 fallInertia(0, 0, 0);
+  fallShape->calculateLocalInertia(mass, fallInertia);
+  btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass, fallMotionState, fallShape, fallInertia);
+  btRigidBody *fallRigidBody = new btRigidBody(fallRigidBodyCI);
+  addBody(fallRigidBody);
+  verb->setBody(fallRigidBody);
 }
 
 void OsApp::initPhysics()
@@ -1098,6 +1186,8 @@ void OsApp::initPhysics()
   solver = new btSequentialImpulseConstraintSolver();
   dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
   dynamicsWorld->setGravity(btVector3(0, -9.8, 0));
+
+  m_pickConstraint = 0;
 }
 
 void OsApp::addGround()
