@@ -161,12 +161,19 @@ void OsApp::detIntersection(const btVector3& pos)
         std::cout << "constraint ";
         selected->getBody()->setActivationState(DISABLE_DEACTIVATION);
         btVector3 pivot = selected->getBody()->getCenterOfMassTransform().inverse() * pos;
-        btPoint2PointConstraint *p2p = new btPoint2PointConstraint(*(selected->getBody()), pivot);
-        dynamicsWorld->addConstraint(p2p,true);
-        m_pickConstraint = p2p;
-        //std::cout << p2p->m_setting.m_damping << ' ' << p2p->m_setting.m_impulseClamp << ' ' << p2p->m_setting.m_tau << ' ';
-        //p2p->m_setting.m_impulseClamp = 30.f;
-        //p2p->m_setting.m_tau = 0.001f;
+        //btPoint2PointConstraint *p2p = new btPoint2PointConstraint(*(selected->getBody()), pivot);
+        //dynamicsWorld->addConstraint(p2p,true);
+        //m_pickConstraint = p2p;
+        btTransform tr;
+        tr.setIdentity();
+        tr.setOrigin(pivot);
+        btGeneric6DofConstraint *dof6 = new btGeneric6DofConstraint(*(selected->getBody()),tr,false);
+        dof6->setLinearLowerLimit(btVector3(0,0,0));
+        dof6->setLinearUpperLimit(btVector3(0,0,0));
+        dof6->setAngularLowerLimit(btVector3(0,0,0));
+        dof6->setAngularUpperLimit(btVector3(0,0,0));
+        dynamicsWorld->addConstraint(dof6,true);
+        m_pickConstraint = dof6;
       }
       return;
     }
@@ -183,7 +190,9 @@ void OsApp::updateGrabbing()
 
   // Get the point in space where the wand is located
   gmtl::Point3f wand_pt = gmtl::makeTrans<gmtl::Point3f>(wand_matrix);
+  gmtl::Quat<float> rot = gmtl::makeRot<gmtl::Quat<float> >(wand_matrix);
   static gmtl::Point3f old_wand_pt;
+  static gmtl::Quat<float> init_rot;
 
   mSphere.setCenter(wand_pt);
   mSphere.setRadius(0.1f); //0.02f
@@ -226,21 +235,33 @@ void OsApp::updateGrabbing()
       return;
     }
     old_wand_pt = wand_pt;
+    if(m_pickConstraint)
+    {
+      btGeneric6DofConstraint *pc = static_cast<btGeneric6DofConstraint*>(m_pickConstraint);
+      btQuaternion q = pc->getFrameOffsetA().getRotation();
+      init_rot = gmtl::Quat<float>(q.x(),q.y(),q.z(),q.w()) - rot;
+    }
   }
 
   if(m_pickConstraint)
   {
-#if 1
-    btPoint2PointConstraint *pickCon = static_cast<btPoint2PointConstraint*>(m_pickConstraint);
-    //btVector3 pivot = selected->getBody()->getCenterOfMassTransform().inverse() * gmtl2btVector(wand_pt);
+//#if 1
+//    btPoint2PointConstraint *pickCon = static_cast<btPoint2PointConstraint*>(m_pickConstraint);
+//    //btVector3 pivot = selected->getBody()->getCenterOfMassTransform().inverse() * gmtl2btVector(wand_pt);
+//    btVector3 pivot = gmtl2btVector(wand_pt);
+//    pickCon->setPivotB(pivot);
+//#else
+//    btVector3 oldOrg = selected->getBody()->getWorldTransform().getOrigin();
+//    btVector3 newOrg = oldOrg + gmtl2btVector(wand_pt - old_wand_pt);
+//    selected->getBody()->getWorldTransform().setOrigin(newOrg);
+//    old_wand_pt = wand_pt;
+//#endif
+    btGeneric6DofConstraint *pickCon = static_cast<btGeneric6DofConstraint*>(m_pickConstraint);
     btVector3 pivot = gmtl2btVector(wand_pt);
-    pickCon->setPivotB(pivot);
-#else
-    btVector3 oldOrg = selected->getBody()->getWorldTransform().getOrigin();
-    btVector3 newOrg = oldOrg + gmtl2btVector(wand_pt - old_wand_pt);
-    selected->getBody()->getWorldTransform().setOrigin(newOrg);
-    old_wand_pt = wand_pt;
-#endif
+    pickCon->getFrameOffsetA().setOrigin(pivot);
+    gmtl::Quat<float> drot = rot + init_rot;
+    pickCon->getFrameOffsetA().setRotation(btQuaternion(drot[0],drot[1],drot[2],1.f));
+    //pickCon->getFrameOffsetA().setRotation(btQuaternion(0,0,0,1));
   }
   else
   {
@@ -460,18 +481,32 @@ void OsApp::draw()
         glMultMatrixf(selectable[i]->getInitTransf().mData);
         selectable[i]->draw_model();
       glPopMatrix();
+      if(selectable[i]==moteur)
+      {
+        glPushMatrix();
+          glMultMatrixf(mat);
+          const btCompoundShape *cpSh = static_cast<const btCompoundShape*>(body->getCollisionShape());
+          cpSh->getChildTransform(1).getOpenGLMatrix(mat);
+          glMultMatrixf(mat);
+          glScalef(meche->getScale()[0],meche->getScale()[1],meche->getScale()[2]);
+          glMultMatrixf(meche->getInitTransf().mData);
+          glRotatef(theta,0.f,1.f,0.f);
+          meche->draw_model();
+        glPopMatrix();
+      }
     }
   }
 
-  scow->drawBody();
-  scow1->drawBody();
-  scow2->drawBody();
-  scow3->drawBody();
-  cube1->drawBody();
-  cube2->drawBody();
-  table1->drawBody();
-  platte->drawBody();
-  tableinst->drawBody();
+  //scow->drawBody();
+  //scow1->drawBody();
+  //scow2->drawBody();
+  //scow3->drawBody();
+  //cube1->drawBody();
+  //cube2->drawBody();
+  //table1->drawBody();
+  //platte->drawBody();
+  //tableinst->drawBody();
+  //moteur->drawBody();
 
   //glPushMatrix();
   //  glMultMatrixf(scow1->getPostTransf().mData);
@@ -501,18 +536,18 @@ void OsApp::draw()
     cube2->draw_model();
   glPopMatrix();
 
-  glPushMatrix();
-    glMultMatrixf(moteur->getPostTransf().mData);
-    glPushMatrix();
-      glMultMatrixf(moteur->getTrans().mData);
-      moteur->draw_model();
-    glPopMatrix();
-    glPushMatrix();
-      glMultMatrixf(meche->getTrans().mData);
-      glRotatef(theta,0.f,1.f,0.f);
-      meche->draw_model();
-    glPopMatrix();
-  glPopMatrix();
+  //glPushMatrix();
+  //  glMultMatrixf(moteur->getPostTransf().mData);
+  //  glPushMatrix();
+  //    glMultMatrixf(moteur->getTrans().mData);
+  //    moteur->draw_model();
+  //  glPopMatrix();
+  //  glPushMatrix();
+  //    glMultMatrixf(meche->getTrans().mData);
+  //    glRotatef(theta,0.f,1.f,0.f);
+  //    meche->draw_model();
+  //  glPopMatrix();
+  //glPopMatrix();
 
   glPushMatrix();
     glMultMatrixf(femur8->getTrans().mData);
@@ -540,6 +575,7 @@ void OsApp::draw()
     glPopMatrix();
   }
 
+  // cylindre pour la partie centrale du fémur
   glPushMatrix();
     femur8->getBody()->getMotionState()->getWorldTransform(t);
     t.getOpenGLMatrix(mat);
@@ -959,11 +995,29 @@ void OsApp::addPerceuse()
   btCompoundShape *compound = new btCompoundShape();
   btTransform mecheTr;
   mecheTr.setIdentity();
-  mecheTr.setOrigin(btVector3(-0.1f,0.175,-0.5325f));
+  mecheTr.setOrigin(btVector3(0.f,0.3,-0.22f));
+  //mecheTr.setRotation(btQuaternion(0.f,gmtl::Math::deg2Rad(90.f),0.f));
   btTransform moteurTr;
   moteurTr.setIdentity();
   compound->addChildShape(moteurTr, moteurShape);
   compound->addChildShape(mecheTr, mecheShape);
+
+  btDefaultMotionState* fallMotionState =
+    new btDefaultMotionState(btTransform(btQuaternion(0.f,gmtl::Math::deg2Rad(90.f),0.f), btVector3(3.4f,2.975f,0.425f)));
+  btScalar mass = 1000.f;
+  btVector3 fallInertia(0, 0, 0);
+  compound->calculateLocalInertia(mass, fallInertia);
+  btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass, fallMotionState, compound, fallInertia);
+  btRigidBody *fallRigidBody = new btRigidBody(fallRigidBodyCI);
+  addBody(fallRigidBody);
+  moteur->setBody(fallRigidBody);
+
+  const btCompoundShape *cpSh = static_cast<const btCompoundShape*>(fallRigidBody->getCollisionShape());
+  for(int i=0; i<cpSh->getNumChildShapes(); ++i)
+  {
+    btTransform tr = cpSh->getChildTransform(i);
+    std::cout << tr.getOrigin()[0] << ' ' << tr.getOrigin()[1] << ' ' << tr.getOrigin()[2] << std::endl;
+  }
 }
 
 void OsApp::addPlaque()
