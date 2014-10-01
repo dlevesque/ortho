@@ -203,6 +203,14 @@ public:
   {
     return scale;
   }
+  void setInitBodyTr(const btTransform& tr)
+  {
+    bodyInitTr = tr;
+  }
+  void resetBody()
+  {
+    bulletBody->setWorldTransform(bodyInitTr);
+  }
 private:
   void comp_waabox();
   GLuint texture;
@@ -218,6 +226,7 @@ private:
   gmtl::Vec3f scale;
 
   btRigidBody *bulletBody;
+  btTransform bodyInitTr;
 
   GLfloat min_x, max_x, min_y, max_y, min_z, max_z;
 

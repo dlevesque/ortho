@@ -52,10 +52,10 @@ void OsApp::init()
   mHead.init("VJHead");
   mWand.init("VJWand");
 
-  /*mForwardButton.init("VJButton0");
+  mForwardButton.init("VJButton0");
   mRotateButtonX.init("VJButton1");
   mRotateButtonY.init("VJButton4");
-  mRotateButtonZ.init("VJButton3");*/
+  mRotateButtonZ.init("VJButton3");
   mGrabButton.init("VJButton2");
 
   initPhysics();
@@ -116,6 +116,27 @@ void OsApp::preFrame()
 {
   dynamicsWorld->stepSimulation(1./60.,10,1./600.);
   //dynamicsWorld->stepSimulation(1./60.);
+
+  //std::cout << mForwardButton->getData() << ' ';
+  //std::cout << mRotateButtonX->getData() << ' ';
+  //std::cout << mGrabButton->getData() << ' ';
+  //std::cout << mRotateButtonZ->getData() << ' ';
+  //std::cout << mRotateButtonY->getData() << ' ';
+  //std::cout << std::endl;
+
+  if(mRotateButtonX->getData() == gadget::Digital::TOGGLE_OFF)
+  {
+    for(int i=0; i<selectable.size(); ++i)
+    {
+      if(selectable[i]->getBody())
+      {
+        selectable[i]->getBody()->setActivationState(DISABLE_DEACTIVATION);
+        selectable[i]->resetBody();
+        selectable[i]->getBody()->forceActivationState(ACTIVE_TAG);
+        selectable[i]->getBody()->setDeactivationTime(0.f);
+      }
+    }
+  }
 
   // Update the grabbing state
   updateGrabbing();
@@ -240,7 +261,7 @@ void OsApp::updateGrabbing()
       btGeneric6DofConstraint *pc = static_cast<btGeneric6DofConstraint*>(m_pickConstraint);
       btQuaternion q = pc->getFrameOffsetA().getRotation();
       btQuaternion r(rot[0],rot[1],rot[2],rot[3]);
-      btQuaternion init = q * r.inverse();
+      btQuaternion init = r.inverse() * q;
       init_rot = gmtl::Quat<float>(init.x(),init.y(),init.z(),init.w());
     }
   }
@@ -562,11 +583,6 @@ void OsApp::draw()
   //  verb->draw_model(); 
   //glPopMatrix();
 
-  glPushMatrix();
-    glMultMatrixf(mNavMatrix.mData);
-    drawSphere(mSphere, mSphereIsect, mSphereSelected);
-  glPopMatrix();
-
   for(int i=0; i<fallRigidBodies.size(); ++i)
   {
     glPushMatrix();
@@ -591,6 +607,12 @@ void OsApp::draw()
   glPopMatrix();
 
   glPopMatrix();
+
+  glPushMatrix();
+    glMultMatrixf(mNavMatrix.mData);
+    drawSphere(mSphere, mSphereIsect, mSphereSelected);
+  glPopMatrix();
+
 
   //moteur->draw_waabox();
   //scow->draw_waabox();
@@ -868,6 +890,7 @@ void OsApp::addFemur()
     new btDefaultMotionState(btTransform(btQuaternion(gmtl::Math::deg2Rad(5.f),0.f,gmtl::Math::deg2Rad(91.f)), btVector3(0.5f,2.6f,0.21f)));
   btRigidBody::btRigidBodyConstructionInfo rbCI(0.f, state, shape, btVector3(0.f, 0.f, 0.f));
   btRigidBody *rb = new btRigidBody(rbCI);
+  rb->setFriction(5.f);
   addBody(rb);
   femur8->setBody(rb);
 }
@@ -1004,9 +1027,10 @@ void OsApp::addPerceuse()
   compound->addChildShape(moteurTr, moteurShape);
   compound->addChildShape(mecheTr, mecheShape);
 
-  btDefaultMotionState* fallMotionState =
-    new btDefaultMotionState(btTransform(btQuaternion(0.f,gmtl::Math::deg2Rad(90.f),0.f), btVector3(3.4f,2.975f,0.425f)));
-  btScalar mass = 1000.f;
+  btTransform tr(btQuaternion(0.f,gmtl::Math::deg2Rad(90.f),0.f), btVector3(3.4f,5.075f,0.425f));
+  moteur->setInitBodyTr(tr);
+  btDefaultMotionState* fallMotionState = new btDefaultMotionState(tr);
+  btScalar mass = 3.f;
   btVector3 fallInertia(0, 0, 0);
   compound->calculateLocalInertia(mass, fallInertia);
   btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass, fallMotionState, compound, fallInertia);
@@ -1014,12 +1038,12 @@ void OsApp::addPerceuse()
   addBody(fallRigidBody);
   moteur->setBody(fallRigidBody);
 
-  const btCompoundShape *cpSh = static_cast<const btCompoundShape*>(fallRigidBody->getCollisionShape());
-  for(int i=0; i<cpSh->getNumChildShapes(); ++i)
-  {
-    btTransform tr = cpSh->getChildTransform(i);
-    std::cout << tr.getOrigin()[0] << ' ' << tr.getOrigin()[1] << ' ' << tr.getOrigin()[2] << std::endl;
-  }
+  //const btCompoundShape *cpSh = static_cast<const btCompoundShape*>(fallRigidBody->getCollisionShape());
+  //for(int i=0; i<cpSh->getNumChildShapes(); ++i)
+  //{
+  //  btTransform tr = cpSh->getChildTransform(i);
+  //  std::cout << "ch " << tr.getOrigin()[0] << ' ' << tr.getOrigin()[1] << ' ' << tr.getOrigin()[2] << std::endl;
+  //}
 }
 
 void OsApp::addPlaque()
@@ -1038,13 +1062,16 @@ void OsApp::addPlaque()
   dy = platte->aabox.mMax[1] - platte->aabox.mMin[1];
   dz = platte->aabox.mMax[2] - platte->aabox.mMin[2];
   btCollisionShape *fallShape = new btBoxShape(btVector3(dx*0.0001/2, dy*0.0001/2, dz*0.0001/2));
-  btDefaultMotionState* fallMotionState =
-    new btDefaultMotionState(btTransform(btQuaternion(0.f,gmtl::Math::deg2Rad(90.f),0.f), btVector3(platte->trCentre()[0],platte->trCentre()[1],platte->trCentre()[2])));
-  btScalar mass = 300.f;
+  btTransform tr(btQuaternion(0.f,gmtl::Math::deg2Rad(85.f),0.f), btVector3(platte->trCentre()[0],platte->trCentre()[1],platte->trCentre()[2]));
+  platte->setInitBodyTr(tr);
+  btDefaultMotionState* fallMotionState = new btDefaultMotionState(tr);
+  btScalar mass = 0.3f;
   btVector3 fallInertia(0, 0, 0);
   fallShape->calculateLocalInertia(mass, fallInertia);
   btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass, fallMotionState, fallShape, fallInertia);
   btRigidBody *fallRigidBody = new btRigidBody(fallRigidBodyCI);
+  //fallRigidBody->setFriction(5.f);
+  std::cout << "friction " << fallRigidBody->getFriction() << std::endl;
   addBody(fallRigidBody);
   platte->setBody(fallRigidBody);
 }
@@ -1078,9 +1105,10 @@ void OsApp::addVis()
   //}
   //btDefaultMotionState* fallMotionState =
   //              new btDefaultMotionState(btTransform(rot, transl));
-  btDefaultMotionState* fallMotionState =
-    new btDefaultMotionState(btTransform(btQuaternion(0,0,gmtl::Math::deg2Rad(90.f)), btVector3(scow->trCentre()[0],scow->trCentre()[1],scow->trCentre()[2])));
-  btScalar mass = 100.f;
+  btTransform tr(btQuaternion(0,0,gmtl::Math::deg2Rad(90.f)), btVector3(scow->trCentre()[0],scow->trCentre()[1],scow->trCentre()[2]));
+  scow->setInitBodyTr(tr);
+  btDefaultMotionState* fallMotionState = new btDefaultMotionState(tr);
+  btScalar mass = 0.1f;
   btVector3 fallInertia(0, 0, 0);
   fallShape->calculateLocalInertia(mass, fallInertia);
   btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass, fallMotionState, fallShape, fallInertia);
@@ -1107,9 +1135,10 @@ void OsApp::addVis1()
   dy = scow1->aabox.mMax[1] - scow1->aabox.mMin[1];
   dz = scow1->aabox.mMax[2] - scow1->aabox.mMin[2];
   btCollisionShape *fallShape = new btBoxShape(btVector3(dx*0.00009/2, dy*0.00009/2, dz*0.00009/2));
-  btDefaultMotionState* fallMotionState =
-                new btDefaultMotionState(btTransform(btQuaternion(0,0,gmtl::Math::deg2Rad(90.f)), btVector3(scow1->trCentre()[0],scow1->trCentre()[1],scow1->trCentre()[2])));
-  btScalar mass = 100.f;
+  btTransform tr(btQuaternion(0,0,gmtl::Math::deg2Rad(90.f)), btVector3(scow1->trCentre()[0],scow1->trCentre()[1],scow1->trCentre()[2]));
+  scow1->setInitBodyTr(tr);
+  btDefaultMotionState* fallMotionState = new btDefaultMotionState(tr);
+  btScalar mass = 0.1f;
   btVector3 fallInertia(0, 0, 0);
   fallShape->calculateLocalInertia(mass, fallInertia);
   btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass, fallMotionState, fallShape, fallInertia);
@@ -1132,9 +1161,10 @@ void OsApp::addVis2()
   dy = scow2->aabox.mMax[1] - scow2->aabox.mMin[1];
   dz = scow2->aabox.mMax[2] - scow2->aabox.mMin[2];
   btCollisionShape *fallShape = new btBoxShape(btVector3(dx*0.00009/2, dy*0.00009/2, dz*0.00009/2));
-  btDefaultMotionState* fallMotionState =
-                new btDefaultMotionState(btTransform(btQuaternion(0,0,gmtl::Math::deg2Rad(90.f)), btVector3(scow2->trCentre()[0],scow2->trCentre()[1],scow2->trCentre()[2])));
-  btScalar mass = 100.f;
+  btTransform tr(btQuaternion(0,0,gmtl::Math::deg2Rad(90.f)), btVector3(scow2->trCentre()[0],scow2->trCentre()[1],scow2->trCentre()[2]));
+  scow2->setInitBodyTr(tr);
+  btDefaultMotionState* fallMotionState = new btDefaultMotionState(tr);
+  btScalar mass = 0.1f;
   btVector3 fallInertia(0, 0, 0);
   fallShape->calculateLocalInertia(mass, fallInertia);
   btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass, fallMotionState, fallShape, fallInertia);
@@ -1157,9 +1187,10 @@ void OsApp::addVis3()
   dy = scow3->aabox.mMax[1] - scow3->aabox.mMin[1];
   dz = scow3->aabox.mMax[2] - scow3->aabox.mMin[2];
   btCollisionShape *fallShape = new btBoxShape(btVector3(dx*0.00009/2, dy*0.00009/2, dz*0.00009/2));
-  btDefaultMotionState* fallMotionState =
-                new btDefaultMotionState(btTransform(btQuaternion(0,0,gmtl::Math::deg2Rad(90.f)), btVector3(scow3->trCentre()[0],scow3->trCentre()[1],scow3->trCentre()[2])));
-  btScalar mass = 100.f;
+  btTransform tr(btQuaternion(0,0,gmtl::Math::deg2Rad(90.f)), btVector3(scow3->trCentre()[0],scow3->trCentre()[1],scow3->trCentre()[2]));
+  scow3->setInitBodyTr(tr);
+  btDefaultMotionState* fallMotionState = new btDefaultMotionState(tr);
+  btScalar mass = 0.1f;
   btVector3 fallInertia(0, 0, 0);
   fallShape->calculateLocalInertia(mass, fallInertia);
   btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass, fallMotionState, fallShape, fallInertia);
@@ -1222,9 +1253,10 @@ void OsApp::addVerb()
   dy = verb->aabox.mMax[1] - verb->aabox.mMin[1];
   dz = verb->aabox.mMax[2] - verb->aabox.mMin[2];
   btCollisionShape *fallShape = new btBoxShape(btVector3(dx*0.000057/2, dy*0.000057/2, dz*0.000057/2));
-  btDefaultMotionState* fallMotionState =
-    new btDefaultMotionState(btTransform(btQuaternion(0,0,gmtl::Math::deg2Rad(55.f)), btVector3(verb->trCentre()[0],verb->trCentre()[1],verb->trCentre()[2])));
-  btScalar mass = 300.f;
+  btTransform tr(btQuaternion(0,0,gmtl::Math::deg2Rad(55.f)), btVector3(verb->trCentre()[0],verb->trCentre()[1],verb->trCentre()[2]));
+  verb->setInitBodyTr(tr);
+  btDefaultMotionState* fallMotionState = new btDefaultMotionState(tr);
+  btScalar mass = 0.3f;
   btVector3 fallInertia(0, 0, 0);
   fallShape->calculateLocalInertia(mass, fallInertia);
   btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass, fallMotionState, fallShape, fallInertia);
@@ -1242,6 +1274,7 @@ void OsApp::initPhysics()
   solver = new btSequentialImpulseConstraintSolver();
   dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
   dynamicsWorld->setGravity(btVector3(0, -9.8, 0));
+  //dynamicsWorld->setGravity(btVector3(0, 0, 0));
 
   m_pickConstraint = 0;
 }
