@@ -239,7 +239,9 @@ void OsApp::updateGrabbing()
     {
       btGeneric6DofConstraint *pc = static_cast<btGeneric6DofConstraint*>(m_pickConstraint);
       btQuaternion q = pc->getFrameOffsetA().getRotation();
-      init_rot = gmtl::Quat<float>(q.x(),q.y(),q.z(),q.w()) - rot;
+      btQuaternion r(rot[0],rot[1],rot[2],rot[3]);
+      btQuaternion init = q * r.inverse();
+      init_rot = gmtl::Quat<float>(init.x(),init.y(),init.z(),init.w());
     }
   }
 
@@ -259,8 +261,8 @@ void OsApp::updateGrabbing()
     btGeneric6DofConstraint *pickCon = static_cast<btGeneric6DofConstraint*>(m_pickConstraint);
     btVector3 pivot = gmtl2btVector(wand_pt);
     pickCon->getFrameOffsetA().setOrigin(pivot);
-    gmtl::Quat<float> drot = rot + init_rot;
-    pickCon->getFrameOffsetA().setRotation(btQuaternion(drot[0],drot[1],drot[2],1.f));
+    gmtl::Quat<float> drot = rot * init_rot;
+    pickCon->getFrameOffsetA().setRotation(btQuaternion(drot[0],drot[1],drot[2],drot[3]));
     //pickCon->getFrameOffsetA().setRotation(btQuaternion(0,0,0,1));
   }
   else
