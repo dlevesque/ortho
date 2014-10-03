@@ -45,6 +45,8 @@
 
 #include <gmtl/Intersection.h>
 
+#include <cd_wavefront.h>
+
 void OsApp::init()
 {
   vrj::GlApp::init();
@@ -878,6 +880,22 @@ void OsApp::drawSphere(const gmtl::Spheref& sphere,
 
 void OsApp::addFemur()
 {
+  ConvexDecomposition::WavefrontObj wo;
+  wo.loadObj("femur8.obj");
+  btTriangleMesh trimesh;
+  for(int i = 0; i < wo.mTriCount; ++i)
+  {
+    int index0 = wo.mIndices[i*3];
+    int index1 = wo.mIndices[i*3+1];
+    int index2 = wo.mIndices[i*3+2];
+
+    btVector3 vertex0(wo.mVertices[index0*3], wo.mVertices[index0*3+1], wo.mVertices[index0*3+2]);
+    btVector3 vertex1(wo.mVertices[index1*3], wo.mVertices[index1*3+1], wo.mVertices[index1*3+2]);
+    btVector3 vertex2(wo.mVertices[index2*3], wo.mVertices[index2*3+1], wo.mVertices[index2*3+2]);
+
+    trimesh.addTriangle(vertex0,vertex1,vertex2);
+  }
+  btCollisionShape* concaveShape = new btScaledBvhTriangleMeshShape(new btBvhTriangleMeshShape(&trimesh,true),btVector3(0.0023f,0.0023f,0.0023f));
   femur8 = new MeshObj("femur8.obj");
   femur8->setScale(0.0023f);
   femur8->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(4.0f), y_axis )));
