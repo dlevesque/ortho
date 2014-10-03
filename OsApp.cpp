@@ -1055,8 +1055,8 @@ void OsApp::addPlaque()
   platte->setScale(0.0001f);
   platte->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(79.0f), x_axis )));
   platte->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(5.0f), y_axis )));
-  //platte->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(30790.0f*0.0001,76999.0f*0.0001,-5500.0f*0.0001)));
-  platte->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(0.5f,2.7f,0.1f)));
+  platte->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(30790.0f*0.0001,76999.0f*0.0001,-5500.0f*0.0001)));
+  //platte->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(0.5f,2.7f,0.1f)));
   float dx, dy, dz;
   dx = platte->aabox.mMax[0] - platte->aabox.mMin[0];
   dy = platte->aabox.mMax[1] - platte->aabox.mMin[1];
