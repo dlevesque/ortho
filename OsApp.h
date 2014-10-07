@@ -55,6 +55,8 @@
 
 #include "OBJlib.h"
 
+#include <cd_wavefront.h>
+
 class OsApp : public vrj::GlApp
 {
 public:
@@ -108,6 +110,7 @@ public:
 
     bodies.clear();
 
+    //à ajouter : libération de la mémoire des maillages (trimesh)
     delete dynamicsWorld;
     delete solver;
     delete dispatcher;
@@ -239,6 +242,13 @@ private:
     return gmtl::Point3f(v.x(),v.y(),v.z());
   }
 
+  //btMatrix3x3 gmtl44rot2bt33rot(const gmtl::Matrix44f& m) const
+  //{
+  //  return btMatrix3x3(m(0,0), m(0,1), m(0,2),
+  //                      m(1,0), m(1,1), m(1,2),
+  //                      m(2,0), m(2,1), m(2,2));
+  //}
+
   void initPhysics();
   void addGround();
 
@@ -257,6 +267,8 @@ private:
   void addCube1();
   void addCube2();
   void addVerb();
+
+  void buildTrimesh(const ConvexDecomposition::WavefrontObj &wo, btTriangleMesh *trimesh, const btVector3 &centre, const btVector3 &scaling);
 
   const gmtl::Vec3f x_axis;
   const gmtl::Vec3f y_axis;

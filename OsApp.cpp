@@ -45,7 +45,7 @@
 
 #include <gmtl/Intersection.h>
 
-#include <cd_wavefront.h>
+#include <BulletCollision/Gimpact/btGImpactShape.h>
 
 void OsApp::init()
 {
@@ -67,9 +67,7 @@ void OsApp::init()
   addTable1();
   addTable2();
   addTableInst();
-  //addMoteur();
-  //addMeche();
-  addPerceuse();
+  addPerceuse(); // moteur et mèche
   addPlaque();
   addVis();
   addVis1();
@@ -89,9 +87,9 @@ void OsApp::init()
 
   //ahla->make_bbox();
 
-  // Qu'il neige !
+  //// Qu'il neige !
   //btCollisionShape *fallSphereShape = new btSphereShape(0.02);
-  //btScalar sphereMass = 100.f;
+  //btScalar sphereMass = 0.1f;
   //btVector3 fallSphereInertia(0, 0, 0);
   //fallSphereShape->calculateLocalInertia(sphereMass, fallSphereInertia);
   //for(float x = -2.f; x<2.1f; x+=0.1)
@@ -575,7 +573,12 @@ void OsApp::draw()
   //glPopMatrix();
 
   glPushMatrix();
-    glMultMatrixf(femur8->getTrans().mData);
+    femur8->getBody()->getMotionState()->getWorldTransform(t);
+    t.getOpenGLMatrix(mat);
+    glMultMatrixf(mat);
+    //glMultMatrixf(femur8->getTrans().mData);
+    glScalef(femur8->getScale()[0],femur8->getScale()[1],femur8->getScale()[2]);
+    glMultMatrixf(femur8->getInitTransf().mData);
     femur8->draw_model();
   glPopMatrix();
 
@@ -588,6 +591,7 @@ void OsApp::draw()
   for(int i=0; i<fallRigidBodies.size(); ++i)
   {
     glPushMatrix();
+      glColor3f(1.0f,0.0f,0.0f);
       fallRigidBodies[i]->getMotionState()->getWorldTransform(t);
       t.getOpenGLMatrix(mat);
       glMultMatrixf(mat);
@@ -595,18 +599,18 @@ void OsApp::draw()
     glPopMatrix();
   }
 
-  // cylindre pour la partie centrale du fémur
-  glPushMatrix();
-    femur8->getBody()->getMotionState()->getWorldTransform(t);
-    t.getOpenGLMatrix(mat);
-    glMultMatrixf(mat);
-    glColor3f(0.8f, 0.8f, 0.5f);
-    btVector3 aabbMin, aabbMax;
-    femur8->getBody()->getCollisionShape()->getAabb(btTransform::getIdentity(), aabbMin, aabbMax);
-    glRotatef(90.f, 1.f, 0.f, 0.f);
-    glTranslatef(0.f,0.f,aabbMin[1]);
-    gluCylinder(mSphereQuad, aabbMax[0], aabbMax[0], 2.f*aabbMax[1], 10, 10);
-  glPopMatrix();
+  //// cylindre pour la partie centrale du fémur
+  //glPushMatrix();
+  //  femur8->getBody()->getMotionState()->getWorldTransform(t);
+  //  t.getOpenGLMatrix(mat);
+  //  glMultMatrixf(mat);
+  //  glColor3f(0.8f, 0.8f, 0.5f);
+  //  btVector3 aabbMin, aabbMax;
+  //  femur8->getBody()->getCollisionShape()->getAabb(btTransform::getIdentity(), aabbMin, aabbMax);
+  //  glRotatef(90.f, 1.f, 0.f, 0.f);
+  //  glTranslatef(0.f,0.f,aabbMin[1]);
+  //  gluCylinder(mSphereQuad, aabbMax[0], aabbMax[0], 2.f*aabbMax[1], 10, 10);
+  //glPopMatrix();
 
   glPopMatrix();
 
@@ -878,11 +882,8 @@ void OsApp::drawSphere(const gmtl::Spheref& sphere,
    glPopMatrix();
 }
 
-void OsApp::addFemur()
+void OsApp::buildTrimesh(const ConvexDecomposition::WavefrontObj &wo, btTriangleMesh *trimesh, const btVector3 &centre, const btVector3 &scaling)
 {
-  ConvexDecomposition::WavefrontObj wo;
-  wo.loadObj("femur8.obj");
-  btTriangleMesh trimesh;
   for(int i = 0; i < wo.mTriCount; ++i)
   {
     int index0 = wo.mIndices[i*3];
@@ -893,20 +894,50 @@ void OsApp::addFemur()
     btVector3 vertex1(wo.mVertices[index1*3], wo.mVertices[index1*3+1], wo.mVertices[index1*3+2]);
     btVector3 vertex2(wo.mVertices[index2*3], wo.mVertices[index2*3+1], wo.mVertices[index2*3+2]);
 
-    trimesh.addTriangle(vertex0,vertex1,vertex2);
+    vertex0 -= centre;
+    vertex1 -= centre;
+    vertex2 -= centre;
+
+    vertex0 *= scaling;
+    vertex1 *= scaling;
+    vertex2 *= scaling;
+
+    trimesh->addTriangle(vertex0,vertex1,vertex2);
   }
-  btCollisionShape* concaveShape = new btScaledBvhTriangleMeshShape(new btBvhTriangleMeshShape(&trimesh,true),btVector3(0.0023f,0.0023f,0.0023f));
+}
+
+void OsApp::addFemur()
+{
   femur8 = new MeshObj("femur8.obj");
+  femur8->make_bbox();
+  femur8->initTr(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-femur8->center[0],-femur8->center[1],-femur8->center[2])));
   femur8->setScale(0.0023f);
   femur8->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(4.0f), y_axis )));
   femur8->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.0f), z_axis )));
   femur8->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(-78.0f), y_axis )));
+  //btMatrix3x3 btRot33 = gmtl44rot2bt33rot(femur8->getTrans());
   femur8->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(280.0f*0.0023,1230.0f*0.0023,2600.0f*0.0023)));
-
+  //femur8->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(280.0f*0.0023,1230.0f*0.0023,0.0f*0.0023)));
+#if 1
+  ConvexDecomposition::WavefrontObj wo;
+  wo.loadObj("femur8.obj");
+  btTriangleMesh *trimesh = new btTriangleMesh;
+  btVector3 localScaling(0.0023f,0.0023f,0.0023f);
+  btVector3 centre(femur8->center[0],femur8->center[1],femur8->center[2]);
+  buildTrimesh(wo,trimesh,centre,localScaling);
+  btCollisionShape* concaveShape = new btBvhTriangleMeshShape(trimesh,true);
+  btQuaternion rot = btQuaternion(gmtl::Math::deg2Rad(-78.0f),0,0) * btQuaternion(0,0,gmtl::Math::deg2Rad(90.0f)) * btQuaternion(gmtl::Math::deg2Rad(4.0f),0,0);
+  btDefaultMotionState *state =
+    new btDefaultMotionState(btTransform(rot, btVector3(femur8->trCentre()[0],femur8->trCentre()[1],femur8->trCentre()[2])));
+  //btDefaultMotionState *state =
+  //  new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0.f,0.f,0.f)));
+  btRigidBody::btRigidBodyConstructionInfo rbCI(0.f, state, concaveShape, btVector3(0.f, 0.f, 0.f));
+#else
   btCollisionShape *shape = new btCylinderShape(btVector3(0.06f,0.7f,1.f));
   btDefaultMotionState *state =
     new btDefaultMotionState(btTransform(btQuaternion(gmtl::Math::deg2Rad(5.f),0.f,gmtl::Math::deg2Rad(91.f)), btVector3(0.5f,2.6f,0.21f)));
   btRigidBody::btRigidBodyConstructionInfo rbCI(0.f, state, shape, btVector3(0.f, 0.f, 0.f));
+#endif
   btRigidBody *rb = new btRigidBody(rbCI);
   rb->setFriction(5.f);
   addBody(rb);
@@ -1048,7 +1079,7 @@ void OsApp::addPerceuse()
   btTransform tr(btQuaternion(0.f,gmtl::Math::deg2Rad(90.f),0.f), btVector3(3.4f,5.075f,0.425f));
   moteur->setInitBodyTr(tr);
   btDefaultMotionState* fallMotionState = new btDefaultMotionState(tr);
-  btScalar mass = 3.f;
+  btScalar mass = 30.f;
   btVector3 fallInertia(0, 0, 0);
   compound->calculateLocalInertia(mass, fallInertia);
   btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass, fallMotionState, compound, fallInertia);
@@ -1075,12 +1106,23 @@ void OsApp::addPlaque()
   platte->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(5.0f), y_axis )));
   platte->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(30790.0f*0.0001,76999.0f*0.0001,-5500.0f*0.0001)));
   //platte->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(0.5f,2.7f,0.1f)));
+#if 1
+  ConvexDecomposition::WavefrontObj wo;
+  wo.loadObj("platte.obj");
+  btTriangleMesh *trimesh = new btTriangleMesh;
+  btVector3 localScaling(0.0001f,0.0001f,0.0001f);
+  btVector3 centre(platte->center[0],platte->center[1],platte->center[2]);
+  buildTrimesh(wo,trimesh,centre,localScaling);
+  btGImpactMeshShape *fallShape = new btGImpactMeshShape(trimesh);
+  fallShape->updateBound();
+#else
   float dx, dy, dz;
   dx = platte->aabox.mMax[0] - platte->aabox.mMin[0];
   dy = platte->aabox.mMax[1] - platte->aabox.mMin[1];
   dz = platte->aabox.mMax[2] - platte->aabox.mMin[2];
   btCollisionShape *fallShape = new btBoxShape(btVector3(dx*0.0001/2, dy*0.0001/2, dz*0.0001/2));
-  btTransform tr(btQuaternion(0.f,gmtl::Math::deg2Rad(85.f),0.f), btVector3(platte->trCentre()[0],platte->trCentre()[1],platte->trCentre()[2]));
+#endif
+  btTransform tr(btQuaternion(0.f,gmtl::Math::deg2Rad(185.f),0.f), btVector3(platte->trCentre()[0],platte->trCentre()[1],platte->trCentre()[2]));
   platte->setInitBodyTr(tr);
   btDefaultMotionState* fallMotionState = new btDefaultMotionState(tr);
   btScalar mass = 0.3f;
@@ -1088,8 +1130,6 @@ void OsApp::addPlaque()
   fallShape->calculateLocalInertia(mass, fallInertia);
   btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass, fallMotionState, fallShape, fallInertia);
   btRigidBody *fallRigidBody = new btRigidBody(fallRigidBodyCI);
-  //fallRigidBody->setFriction(5.f);
-  std::cout << "friction " << fallRigidBody->getFriction() << std::endl;
   addBody(fallRigidBody);
   platte->setBody(fallRigidBody);
 }
