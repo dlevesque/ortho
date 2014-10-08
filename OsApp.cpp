@@ -46,6 +46,7 @@
 #include <gmtl/Intersection.h>
 
 #include <BulletCollision/Gimpact/btGImpactShape.h>
+#include <BulletCollision/Gimpact/btGImpactCollisionAlgorithm.h>
 
 void OsApp::init()
 {
@@ -76,6 +77,9 @@ void OsApp::init()
   addCube1();
   addCube2();
   addVerb();
+
+  btCollisionDispatcher *disp = static_cast<btCollisionDispatcher*>(dynamicsWorld->getDispatcher());
+  btGImpactCollisionAlgorithm::registerAlgorithm(disp);
 
   selected = 0;
 
@@ -132,6 +136,8 @@ void OsApp::preFrame()
       {
         selectable[i]->getBody()->setActivationState(DISABLE_DEACTIVATION);
         selectable[i]->resetBody();
+        selectable[i]->getBody()->setAngularVelocity(btVector3(0,0,0));
+        selectable[i]->getBody()->setLinearVelocity(btVector3(0,0,0));
         selectable[i]->getBody()->forceActivationState(ACTIVE_TAG);
         selectable[i]->getBody()->setDeactivationTime(0.f);
       }
@@ -925,7 +931,9 @@ void OsApp::addFemur()
   btVector3 localScaling(0.0023f,0.0023f,0.0023f);
   btVector3 centre(femur8->center[0],femur8->center[1],femur8->center[2]);
   buildTrimesh(wo,trimesh,centre,localScaling);
-  btCollisionShape* concaveShape = new btBvhTriangleMeshShape(trimesh,true);
+  //btBvhTriangleMeshShape* concaveShape = new btBvhTriangleMeshShape(trimesh,true);
+  btGImpactMeshShape* concaveShape = new btGImpactMeshShape(trimesh);
+  concaveShape->updateBound();
   btQuaternion rot = btQuaternion(gmtl::Math::deg2Rad(-78.0f),0,0) * btQuaternion(0,0,gmtl::Math::deg2Rad(90.0f)) * btQuaternion(gmtl::Math::deg2Rad(4.0f),0,0);
   btDefaultMotionState *state =
     new btDefaultMotionState(btTransform(rot, btVector3(femur8->trCentre()[0],femur8->trCentre()[1],femur8->trCentre()[2])));
@@ -1144,7 +1152,7 @@ void OsApp::addVis()
   scow->initTr(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-scow->center[0],-scow->center[1],-scow->center[2])));
   scow->setScale(0.00009f);
   scow->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
-  scow->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009,72209.0f*0.00009,0.0f*0.00009)));
+  scow->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009,32209.0f*0.00009,0.0f*0.00009)));
   float dx, dy, dz;
   dx = scow->aabox.mMax[0] - scow->aabox.mMin[0];
   dy = scow->aabox.mMax[1] - scow->aabox.mMin[1];
@@ -1163,7 +1171,7 @@ void OsApp::addVis()
   //}
   //btDefaultMotionState* fallMotionState =
   //              new btDefaultMotionState(btTransform(rot, transl));
-  btTransform tr(btQuaternion(0,0,gmtl::Math::deg2Rad(90.f)), btVector3(scow->trCentre()[0],scow->trCentre()[1],scow->trCentre()[2]));
+  btTransform tr(btQuaternion(0,0,gmtl::Math::deg2Rad(-90.f)), btVector3(scow->trCentre()[0],scow->trCentre()[1],scow->trCentre()[2]));
   scow->setInitBodyTr(tr);
   btDefaultMotionState* fallMotionState = new btDefaultMotionState(tr);
   btScalar mass = 0.1f;
@@ -1173,10 +1181,6 @@ void OsApp::addVis()
   btRigidBody *fallRigidBody = new btRigidBody(fallRigidBodyCI);
   addBody(fallRigidBody);
   scow->setBody(fallRigidBody);
-  //std::cout << "BodyMatrix ";
-  //scow->printBodyMatrix();
-  //std::cout << "Transf ";
-  //scow->printTransf();
 }
 
 void OsApp::addVis1()
@@ -1187,7 +1191,7 @@ void OsApp::addVis1()
   scow1->initTr(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-scow1->center[0],-scow1->center[1],-scow1->center[2])));
   scow1->setScale(0.00009f);
   scow1->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
-  scow1->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009,62209.0f*0.00009,1000.0f*0.00009)));
+  scow1->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009,32209.0f*0.00009,1000.0f*0.00009)));
   float dx, dy, dz;
   dx = scow1->aabox.mMax[0] - scow1->aabox.mMin[0];
   dy = scow1->aabox.mMax[1] - scow1->aabox.mMin[1];
@@ -1213,7 +1217,7 @@ void OsApp::addVis2()
   scow2->initTr(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-scow2->center[0],-scow2->center[1],-scow2->center[2])));
   scow2->setScale(0.00009f);
   scow2->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
-  scow2->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009,52209.0f*0.00009,2000.0f*0.00009)));
+  scow2->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009,32209.0f*0.00009,2000.0f*0.00009)));
   float dx, dy, dz;
   dx = scow2->aabox.mMax[0] - scow2->aabox.mMin[0];
   dy = scow2->aabox.mMax[1] - scow2->aabox.mMin[1];
@@ -1239,7 +1243,7 @@ void OsApp::addVis3()
   scow3->initTr(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-scow3->center[0],-scow3->center[1],-scow3->center[2])));
   scow3->setScale(0.00009f);
   scow3->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
-  scow3->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009,42209.0f*0.00009,-900.0f*0.00009)));
+  scow3->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009,32209.0f*0.00009,-900.0f*0.00009)));
   float dx, dy, dz;
   dx = scow3->aabox.mMax[0] - scow3->aabox.mMin[0];
   dy = scow3->aabox.mMax[1] - scow3->aabox.mMin[1];
