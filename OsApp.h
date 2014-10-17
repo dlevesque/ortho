@@ -132,6 +132,9 @@ public:
 
   void dumpState();
 
+  static bool callbackFunc(btManifoldPoint &cp, const btCollisionObjectWrapper *obj1, int id1, int index1, const btCollisionObjectWrapper *obj2, int id2, int index2);
+  bool mcallbackFunc(btManifoldPoint &cp, const btCollisionObjectWrapper *obj1, int id1, int index1, const btCollisionObjectWrapper *obj2, int id2, int index2);
+
   /** Initialize the test runner and the associated tests.
   * This also sets up the runner to start processing tests
   */
@@ -150,6 +153,8 @@ protected:
   void updateLogger();
 
 private:
+  static OsApp *thisApp;
+
   void detIntersection(const btVector3&);
 
   void initShapes();

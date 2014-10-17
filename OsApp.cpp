@@ -48,9 +48,13 @@
 #include <BulletCollision/Gimpact/btGImpactShape.h>
 #include <BulletCollision/Gimpact/btGImpactCollisionAlgorithm.h>
 
+OsApp* OsApp::thisApp = 0;
+
 void OsApp::init()
 {
   vrj::GlApp::init();
+
+  thisApp = this;
 
   mHead.init("VJHead");
   mWand.init("VJWand");
@@ -114,6 +118,27 @@ void OsApp::contextInit()
 {
   initGLState();
   /*soundFmod(path,posM);*/
+}
+
+bool OsApp::callbackFunc(btManifoldPoint &cp, const btCollisionObjectWrapper *obj1, int id1, int index1, const btCollisionObjectWrapper *obj2, int id2, int index2)
+{
+  return thisApp->mcallbackFunc(cp,obj1,id1,index1,obj2,id2,index2);
+}
+
+bool OsApp::mcallbackFunc(btManifoldPoint &cp, const btCollisionObjectWrapper *obj1, int id1, int index1, const btCollisionObjectWrapper *obj2, int id2, int index2)
+{
+  const btCollisionObject *o1 = obj1->getCollisionObject();
+  const btCollisionObject *o2 = obj2->getCollisionObject();
+  
+  if(o1 == femur8->getBody())
+    std::cout << "o1 == femur " << id1 << " " << index1 << std::endl;
+  //if(o1 == platte->getBody())
+  //  std::cout << "o1 == plaque" << std::endl;
+  if(o2 == femur8->getBody())
+    std::cout << "o2 == femur" << id1 << " " << index1 << std::endl;
+  //if(o2 == platte->getBody())
+  //  std::cout << "o2 == plaque" << std::endl;
+  return false;
 }
 
 void OsApp::preFrame()
@@ -1138,6 +1163,7 @@ void OsApp::addPlaque()
   fallShape->calculateLocalInertia(mass, fallInertia);
   btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass, fallMotionState, fallShape, fallInertia);
   btRigidBody *fallRigidBody = new btRigidBody(fallRigidBodyCI);
+  fallRigidBody->setCollisionFlags(fallRigidBody->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
   addBody(fallRigidBody);
   platte->setBody(fallRigidBody);
 }
@@ -1337,6 +1363,8 @@ void OsApp::initPhysics()
   dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
   dynamicsWorld->setGravity(btVector3(0, -9.8, 0));
   //dynamicsWorld->setGravity(btVector3(0, 0, 0));
+
+  gContactAddedCallback = callbackFunc;
 
   m_pickConstraint = 0;
 }
