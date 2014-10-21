@@ -48,6 +48,56 @@
 #include <BulletCollision/Gimpact/btGImpactShape.h>
 #include <BulletCollision/Gimpact/btGImpactCollisionAlgorithm.h>
 
+class GlDrawcallback : public btTriangleCallback
+{
+
+public:
+
+	bool	m_wireframe;
+
+	GlDrawcallback()
+		:m_wireframe(false)
+	{
+	}
+
+	virtual void processTriangle(btVector3* triangle,int partId, int triangleIndex)
+	{
+
+		(void)triangleIndex;
+		(void)partId;
+
+
+		if (m_wireframe)
+		{
+			glBegin(GL_LINES);
+			glColor3f(1, 0, 0);
+			glVertex3d(triangle[0].getX(), triangle[0].getY(), triangle[0].getZ());
+			glVertex3d(triangle[1].getX(), triangle[1].getY(), triangle[1].getZ());
+			glColor3f(0, 1, 0);
+			glVertex3d(triangle[2].getX(), triangle[2].getY(), triangle[2].getZ());
+			glVertex3d(triangle[1].getX(), triangle[1].getY(), triangle[1].getZ());
+			glColor3f(0, 0, 1);
+			glVertex3d(triangle[2].getX(), triangle[2].getY(), triangle[2].getZ());
+			glVertex3d(triangle[0].getX(), triangle[0].getY(), triangle[0].getZ());
+			glEnd();
+		} else
+		{
+			glBegin(GL_TRIANGLES);
+			//glColor3f(1, 1, 1);
+			
+			
+			//glVertex3d(triangle[0].getX(), triangle[0].getY(), triangle[0].getZ());
+			//glVertex3d(triangle[1].getX(), triangle[1].getY(), triangle[1].getZ());
+			//glVertex3d(triangle[2].getX(), triangle[2].getY(), triangle[2].getZ());
+
+			glVertex3d(triangle[2].getX(), triangle[2].getY(), triangle[2].getZ());
+			glVertex3d(triangle[1].getX(), triangle[1].getY(), triangle[1].getZ());
+			glVertex3d(triangle[0].getX(), triangle[0].getY(), triangle[0].getZ());
+			glEnd();
+		}
+	}
+};
+
 OsApp* OsApp::thisApp = 0;
 
 void OsApp::init()
@@ -603,16 +653,26 @@ void OsApp::draw()
   //  glPopMatrix();
   //glPopMatrix();
 
+  //glPushMatrix();
+  //  femur8->getBody()->getMotionState()->getWorldTransform(t);
+  //  t.getOpenGLMatrix(mat);
+  //  glMultMatrixf(mat);
+  //  //glMultMatrixf(femur8->getTrans().mData);
+  //  glScalef(femur8->getScale()[0],femur8->getScale()[1],femur8->getScale()[2]);
+  //  glMultMatrixf(femur8->getInitTransf().mData);
+  //  femur8->draw_model();
+  //glPopMatrix();
+
   glPushMatrix();
     femur8->getBody()->getMotionState()->getWorldTransform(t);
     t.getOpenGLMatrix(mat);
     glMultMatrixf(mat);
-    //glMultMatrixf(femur8->getTrans().mData);
-    glScalef(femur8->getScale()[0],femur8->getScale()[1],femur8->getScale()[2]);
-    glMultMatrixf(femur8->getInitTransf().mData);
-    femur8->draw_model();
+    glColor3f(22.0f,22.0f,22.0f);
+    btConcaveShape *concaveMesh = (btConcaveShape*) femur8->getBody()->getCollisionShape();
+    GlDrawcallback drawCallback;
+    //drawCallback.m_wireframe = true;
+    concaveMesh->processAllTriangles(&drawCallback,btVector3(-100,-100,-100),btVector3(100,100,100));
   glPopMatrix();
-
   //glPushMatrix();
   //  glMultMatrixf(verb->getPostTransf().mData);
   //  glMultMatrixf(verb->getTrans().mData);
@@ -975,6 +1035,7 @@ void OsApp::addFemur()
   rb->setFriction(5.f);
   addBody(rb);
   femur8->setBody(rb);
+  //std::cout << "femur est concave ? " << femur8->getBody()->getCollisionShape()->isConcave() << std::endl;
 }
 
 void OsApp::addTable1()
