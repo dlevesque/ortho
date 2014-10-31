@@ -179,15 +179,34 @@ bool OsApp::mcallbackFunc(btManifoldPoint &cp, const btCollisionObjectWrapper *o
 {
   const btCollisionObject *o1 = obj1->getCollisionObject();
   const btCollisionObject *o2 = obj2->getCollisionObject();
+  int index = -1;
   
   if(o1 == femur8->getBody())
+  {
     std::cout << "o1 == femur " << id1 << " " << index1 << std::endl;
+    index=index1;
+  }
   //if(o1 == platte->getBody())
   //  std::cout << "o1 == plaque" << std::endl;
   if(o2 == femur8->getBody())
-    std::cout << "o2 == femur" << id1 << " " << index1 << std::endl;
+  {
+    std::cout << "o2 == femur" << id2 << " " << index2 << std::endl;
+    index=index2;
+  }
   //if(o2 == platte->getBody())
   //  std::cout << "o2 == plaque" << std::endl;
+
+  if(index == -1) return false;
+  btGImpactMeshShape *shape = static_cast<btGImpactMeshShape*>(femur8->getBody()->getCollisionShape());
+  btTriangleShapeEx triangle;
+  shape->getBulletTriangle(index, triangle);
+  btVector3 vert;
+  std::cout << index << std::endl;
+  for(int i=0; i<triangle.getNumVertices(); ++i)
+  {
+    triangle.getVertex(i,vert);
+    std::cout << vert.getX() << " " << vert.getY() << " " << vert.getZ() << std::endl;
+  }
   return false;
 }
 
@@ -1033,6 +1052,7 @@ void OsApp::addFemur()
 #endif
   btRigidBody *rb = new btRigidBody(rbCI);
   rb->setFriction(5.f);
+  rb->setCollisionFlags(rb->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
   addBody(rb);
   femur8->setBody(rb);
   //std::cout << "femur est concave ? " << femur8->getBody()->getCollisionShape()->isConcave() << std::endl;
