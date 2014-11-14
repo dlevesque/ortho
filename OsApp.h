@@ -111,6 +111,7 @@ public:
     bodies.clear();
 
     //à ajouter : libération de la mémoire des maillages (trimesh)
+    delete trimesh;
     delete dynamicsWorld;
     delete solver;
     delete dispatcher;
@@ -273,6 +274,7 @@ private:
   void addCube2();
   void addVerb();
 
+  btTriangleMesh *trimesh;
   void buildTrimesh(const ConvexDecomposition::WavefrontObj &wo, btTriangleMesh *trimesh, const btVector3 &centre, const btVector3 &scaling);
 
   const gmtl::Vec3f x_axis;

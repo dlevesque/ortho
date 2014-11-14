@@ -197,16 +197,30 @@ bool OsApp::mcallbackFunc(btManifoldPoint &cp, const btCollisionObjectWrapper *o
   //  std::cout << "o2 == plaque" << std::endl;
 
   if(index == -1) return false;
-  btGImpactMeshShape *shape = static_cast<btGImpactMeshShape*>(femur8->getBody()->getCollisionShape());
-  btTriangleShapeEx triangle;
-  shape->getBulletTriangle(index, triangle);
-  btVector3 vert;
-  std::cout << index << std::endl;
-  for(int i=0; i<triangle.getNumVertices(); ++i)
+  std::cout << index << '\n';
+  btIndexedMesh& mesh = trimesh->getIndexedMeshArray()[0];
+  unsigned int *gfxbase = (unsigned int *)(mesh.m_triangleIndexBase + index * mesh.m_triangleIndexStride);
+  for(int j=0; j<3; ++j)
   {
-    triangle.getVertex(i,vert);
-    std::cout << vert.getX() << " " << vert.getY() << " " << vert.getZ() << std::endl;
+    int vindex = gfxbase[j];
+    btScalar *vbase = (btScalar*)(mesh.m_vertexBase + vindex * mesh.m_vertexStride);
+    std::cout << vbase[0] << ' ' << vbase[1] << ' ' << vbase[2] << '\n';
   }
+  btVector3 v1,v2,v3;
+  femur8->getTriangle(index,v1,v2,v3);
+  btVector3 centre(femur8->center[0],femur8->center[1],femur8->center[2]);
+  btVector3 v = /* femur8->getBody()->getWorldTransform() * */(femur8->getScale()[0] * (v1-centre));
+  std::cout << v[0] << ' ' << v[1] << ' ' << v[2] << '\n';
+  //btGImpactMeshShape *shape = static_cast<btGImpactMeshShape*>(femur8->getBody()->getCollisionShape());
+  //btTriangleShapeEx triangle;
+  //shape->getBulletTriangle(index, triangle);
+  //btVector3 vert;
+  //std::cout << index << std::endl;
+  //for(int i=0; i<triangle.getNumVertices(); ++i)
+  //{
+  //  triangle.getVertex(i,vert);
+  //  std::cout << vert.getX() << " " << vert.getY() << " " << vert.getZ() << std::endl;
+  //}
   return false;
 }
 
@@ -672,26 +686,27 @@ void OsApp::draw()
   //  glPopMatrix();
   //glPopMatrix();
 
-  //glPushMatrix();
-  //  femur8->getBody()->getMotionState()->getWorldTransform(t);
-  //  t.getOpenGLMatrix(mat);
-  //  glMultMatrixf(mat);
-  //  //glMultMatrixf(femur8->getTrans().mData);
-  //  glScalef(femur8->getScale()[0],femur8->getScale()[1],femur8->getScale()[2]);
-  //  glMultMatrixf(femur8->getInitTransf().mData);
-  //  femur8->draw_model();
-  //glPopMatrix();
-
   glPushMatrix();
     femur8->getBody()->getMotionState()->getWorldTransform(t);
     t.getOpenGLMatrix(mat);
     glMultMatrixf(mat);
-    glColor3f(22.0f,22.0f,22.0f);
-    btConcaveShape *concaveMesh = (btConcaveShape*) femur8->getBody()->getCollisionShape();
-    GlDrawcallback drawCallback;
-    //drawCallback.m_wireframe = true;
-    concaveMesh->processAllTriangles(&drawCallback,btVector3(-100,-100,-100),btVector3(100,100,100));
+    //glMultMatrixf(femur8->getTrans().mData);
+    glScalef(femur8->getScale()[0],femur8->getScale()[1],femur8->getScale()[2]);
+    glMultMatrixf(femur8->getInitTransf().mData);
+    femur8->draw_model();
   glPopMatrix();
+
+  //glPushMatrix();
+  //  femur8->getBody()->getMotionState()->getWorldTransform(t);
+  //  t.getOpenGLMatrix(mat);
+  //  glMultMatrixf(mat);
+  //  glColor3f(22.0f,22.0f,22.0f);
+  //  btConcaveShape *concaveMesh = (btConcaveShape*) femur8->getBody()->getCollisionShape();
+  //  GlDrawcallback drawCallback;
+  //  //drawCallback.m_wireframe = true;
+  //  concaveMesh->processAllTriangles(&drawCallback,btVector3(-100,-100,-100),btVector3(100,100,100));
+  //glPopMatrix();
+
   //glPushMatrix();
   //  glMultMatrixf(verb->getPostTransf().mData);
   //  glMultMatrixf(verb->getTrans().mData);
@@ -994,6 +1009,7 @@ void OsApp::drawSphere(const gmtl::Spheref& sphere,
 
 void OsApp::buildTrimesh(const ConvexDecomposition::WavefrontObj &wo, btTriangleMesh *trimesh, const btVector3 &centre, const btVector3 &scaling)
 {
+  std::cout << "wo.mTriCount: " << wo.mTriCount << '\n';
   for(int i = 0; i < wo.mTriCount; ++i)
   {
     int index0 = wo.mIndices[i*3];
@@ -1031,13 +1047,82 @@ void OsApp::addFemur()
 #if 1
   ConvexDecomposition::WavefrontObj wo;
   wo.loadObj("femur8.obj");
-  btTriangleMesh *trimesh = new btTriangleMesh;
+  trimesh = new btTriangleMesh;
   btVector3 localScaling(0.0023f,0.0023f,0.0023f);
   btVector3 centre(femur8->center[0],femur8->center[1],femur8->center[2]);
   buildTrimesh(wo,trimesh,centre,localScaling);
+  btIndexedMesh& mesh = trimesh->getIndexedMeshArray()[0];
+  std::cout << "Vertex Type : ";
+  switch(mesh.m_vertexType)
+  {
+  case PHY_FLOAT: std::cout << "PHY_FLOAT "; break; // <==
+  case PHY_DOUBLE: std::cout << "PHY_DOUBLE "; break;
+  case PHY_INTEGER: std::cout << "PHY_INTEGER "; break;
+  case PHY_SHORT: std::cout << "PHY_SHORT "; break;
+  case PHY_FIXEDPOINT88: std::cout << "PHY_FIXEDPOINT88 "; break;
+  case PHY_UCHAR: std::cout << "PHY_UCHAR "; break;
+  default: std::cout << "??? "; break;
+  }
+  std::cout << "Index Type : ";
+  switch(mesh.m_indexType)
+  {
+  case PHY_FLOAT: std::cout << "PHY_FLOAT "; break;
+  case PHY_DOUBLE: std::cout << "PHY_DOUBLE "; break;
+  case PHY_INTEGER: std::cout << "PHY_INTEGER "; break; // <==
+  case PHY_SHORT: std::cout << "PHY_SHORT "; break;
+  case PHY_FIXEDPOINT88: std::cout << "PHY_FIXEDPOINT88 "; break;
+  case PHY_UCHAR: std::cout << "PHY_UCHAR "; break;
+  default: std::cout << "??? "; break;
+  }
+  std::cout << '\n';
+  std::cout << mesh.m_vertexStride << ' ' << mesh.m_triangleIndexStride << '\n';
+  ///////////////////////////////////////////////////////////////////////////////////////
+  //std::ofstream of;
+  //of.open("trimesh.txt");
+  //for(int i=0; i<mesh.m_numTriangles; ++i)
+  //{
+  //  unsigned int *gfxbase = (unsigned int *)(mesh.m_triangleIndexBase + i * mesh.m_triangleIndexStride);
+  //  for(int j=0; j<3; ++j)
+  //  {
+  //    int vindex = gfxbase[j];
+  //    btScalar *vbase = (btScalar*)(mesh.m_vertexBase + vindex * mesh.m_vertexStride);
+  //    of << vbase[0] << ' ' << vbase[1] << ' ' << vbase[2] << (j==2 ? '\n' : ' ');
+  //  }
+  //}
+  //of.close();
+  //////////////////////////////////////////////////////////////////////////////////////////
+  std::ofstream of;
+  of.open("objmesh.txt");
+  btVector3 v1, v2, v3;
+  for(int i=0; i<11671; ++i) //pour une raison quelconque, objlib ne voit que 11671 triangles (au lieu de 11765) !
+  {
+    femur8->getTriangle(i,v1,v2,v3);
+    v1 -= centre;
+    v2 -= centre;
+    v3 -= centre;
+    v1 *= localScaling;
+    v2 *= localScaling;
+    v3 *= localScaling;
+    of << v1.x() << ' ' << v1.y() << ' ' << v1.z() << ' ' << v2.x() << ' ' << v2.y() << ' ' << v2.z() << ' ' << v3.x() << ' ' << v3.y() << ' ' << v3.z() << '\n';
+  }
+  of.close();
+  //////////////////////////////////////////////////////////////////////////////////////////
+  //std::cout << "Triangle Mesh : " << trimesh->getNumSubParts() << ' ' << trimesh->getNumTriangles() << '\n';
   //btBvhTriangleMeshShape* concaveShape = new btBvhTriangleMeshShape(trimesh,true);
   btGImpactMeshShape* concaveShape = new btGImpactMeshShape(trimesh);
   concaveShape->updateBound();
+  //btTriangleShapeEx triangle;
+  //for(int idx=0; idx<20; ++idx)
+  //{
+  //  concaveShape->getBulletTriangle(idx, triangle);
+  //  btVector3 vert;
+  //  std::cout << idx << std::endl;
+  //  for(int i=0; i<triangle.getNumVertices(); ++i)
+  //  {
+  //    triangle.getVertex(i,vert);
+  //    std::cout << vert.getX() << " " << vert.getY() << " " << vert.getZ() << std::endl;
+  //  }
+  //}
   btQuaternion rot = btQuaternion(gmtl::Math::deg2Rad(-78.0f),0,0) * btQuaternion(0,0,gmtl::Math::deg2Rad(90.0f)) * btQuaternion(gmtl::Math::deg2Rad(4.0f),0,0);
   btDefaultMotionState *state =
     new btDefaultMotionState(btTransform(rot, btVector3(femur8->trCentre()[0],femur8->trCentre()[1],femur8->trCentre()[2])));

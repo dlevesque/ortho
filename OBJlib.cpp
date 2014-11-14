@@ -238,7 +238,10 @@ void MeshObj::charger_obj(string nom,MeshObj *first)
         textures=vector2float(tt);
         colours=vector2float(tc);
         n_data=iv.size();
-        //std::cout << nom << ' ' << ver.size() << ' ' << iv.size() << ' ' << tv.size() << std::endl;
+        std::cout << nom << ' ' << ver.size() << ' ' << iv.size() << ' ' << tv.size() << std::endl;
+        //std::cout << nom << ' ';
+        //for(int i=0; i<12; ++i) std::cout << vertice[i] << ' ';
+        //std::cout << '\n';
     }
     else
     {

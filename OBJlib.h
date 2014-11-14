@@ -211,6 +211,16 @@ public:
   {
     bulletBody->setWorldTransform(bodyInitTr);
   }
+  void printTriangle(int index)
+  {
+    std::cout << vertice[index*12] << ' ' << vertice[index*12+1] << ' ' << vertice[index*12+2] << '\n';
+  }
+  void getTriangle(int index, btVector3& v1, btVector3& v2, btVector3& v3)
+  {
+    v1 = btVector3(vertice[index*12],vertice[index*12+1],vertice[index*12+2]);
+    v2 = btVector3(vertice[index*12+4],vertice[index*12+5],vertice[index*12+6]);
+    v3 = btVector3(vertice[index*12+8],vertice[index*12+9],vertice[index*12+10]);
+  }
 private:
   void comp_waabox();
   GLuint texture;
