@@ -28,8 +28,8 @@
 #define _OS_APP_H_
 
 #include <stdlib.h>
-//#include <fmod.h>
-//#include <fmod_errors.h>
+#include <fmod.hpp>
+#include <fmod_errors.h>
 
 #if defined(__APPLE__)
 #  include <OpenGL/gl.h>
@@ -98,7 +98,7 @@ public:
 
     if(m_pickConstraint) delete m_pickConstraint;
 
-    for(int i=0; i<bodies.size(); ++i)
+    for(unsigned int i=0; i<bodies.size(); ++i)
     {
       dynamicsWorld->removeCollisionObject(bodies[i]);
       btMotionState *motionState = bodies[i]->getMotionState();
@@ -165,7 +165,7 @@ private:
   void drawSphere(const gmtl::Spheref& sphere, const bool& intersected,
                  const bool& selected);
 
-  //void initFmod();
+  void initFmod();
   //void updateListener(gmtl::Point3f position,gmtl::Point3f velocity,gmtl::Point3f forward,gmtl::Point3f up);
   //void loadSoundFmodMoteur(char *path);
   //void VolumeMoteur(gmtl::Point3f pos);
@@ -281,30 +281,11 @@ private:
   const gmtl::Vec3f y_axis;
   const gmtl::Vec3f z_axis;
 
-  //vrj::test::TestRunner*  mTestRunner;
+  FMOD::System *fmodSystem;
+  FMOD::Sound *sonPerceuse;
+  FMOD::Channel *fmodCanal;
 
-  /**< Test runner for this appliation */
-  /* char * path;
-  char * path1;
-  CHAR * path2;
-  FMOD_SYSTEM *system1;
-  FMOD_SOUND *sound;
-  FMOD_CHANNEL *channel,*channel1;
-  FMOD_CHANNEL *channeln[2];
-  FMOD_VECTOR velocity ;
-  FMOD_CHANNELGROUP *chGroup1;
-  FMOD_RESULT result;
-  gmtl::Point3f posM;*/
-
-  //FMOD_SYSTEM     *system1;
-  //FMOD_SOUND      *soundC;
-  //FMOD_CHANNEL    *channelC;
-  //FMOD_VECTOR listenerVelocity,listenerPos, soundShperePos, soundShpereVelo,soundCubePos, soundCubeVelo,listenerUp,listenerForward;
-  //char * pathC;
-  //char * pathS;
-  //gmtl::Point3f up,forward,position,velocity;
-
-  //gmtl::Point3f P0c ;
+  bool perceuseOn;
 };
 
 #endif /* _OS_APP_H_ */

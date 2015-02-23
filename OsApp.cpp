@@ -48,6 +48,16 @@
 #include <BulletCollision/Gimpact/btGImpactShape.h>
 #include <BulletCollision/Gimpact/btGImpactCollisionAlgorithm.h>
 
+void ERRCHECK(FMOD_RESULT res)
+{
+  using std::cerr;
+  using std::endl;
+  if(res != FMOD_OK)
+  {
+    cerr << "FMOD error " << res << ' ' << FMOD_ErrorString(res) << endl;
+  }
+}
+
 class GlDrawcallback : public btTriangleCallback
 {
 
@@ -139,6 +149,9 @@ void OsApp::init()
 
   theta = 0.f;
 
+  initFmod();
+  perceuseOn = false;
+
   // Uncomment these lines when setting up logger tests
   //mDumpStateButton.init("VJButton2");
   //mLoggerPlayButton.init("LoggerPlayButton");
@@ -183,34 +196,34 @@ bool OsApp::mcallbackFunc(btManifoldPoint &cp, const btCollisionObjectWrapper *o
   
   if(o1 == femur8->getBody())
   {
-    std::cout << "o1 == femur " << id1 << " " << index1 << std::endl;
+    //std::cout << "o1 == femur " << id1 << " " << index1 << std::endl;
     index=index1;
   }
   //if(o1 == platte->getBody())
   //  std::cout << "o1 == plaque" << std::endl;
   if(o2 == femur8->getBody())
   {
-    std::cout << "o2 == femur" << id2 << " " << index2 << std::endl;
+    //std::cout << "o2 == femur" << id2 << " " << index2 << std::endl;
     index=index2;
   }
   //if(o2 == platte->getBody())
   //  std::cout << "o2 == plaque" << std::endl;
 
   if(index == -1) return false;
-  std::cout << index << '\n';
+  //std::cout << index << '\n';
   btIndexedMesh& mesh = trimesh->getIndexedMeshArray()[0];
   unsigned int *gfxbase = (unsigned int *)(mesh.m_triangleIndexBase + index * mesh.m_triangleIndexStride);
   for(int j=0; j<3; ++j)
   {
     int vindex = gfxbase[j];
     btScalar *vbase = (btScalar*)(mesh.m_vertexBase + vindex * mesh.m_vertexStride);
-    std::cout << vbase[0] << ' ' << vbase[1] << ' ' << vbase[2] << '\n';
+    //std::cout << vbase[0] << ' ' << vbase[1] << ' ' << vbase[2] << '\n';
   }
   btVector3 v1,v2,v3;
   femur8->getTriangle(index,v1,v2,v3);
   btVector3 centre(femur8->center[0],femur8->center[1],femur8->center[2]);
   btVector3 v = /* femur8->getBody()->getWorldTransform() * */(femur8->getScale()[0] * (v1-centre));
-  std::cout << v[0] << ' ' << v[1] << ' ' << v[2] << '\n';
+  //std::cout << v[0] << ' ' << v[1] << ' ' << v[2] << '\n';
   //btGImpactMeshShape *shape = static_cast<btGImpactMeshShape*>(femur8->getBody()->getCollisionShape());
   //btTriangleShapeEx triangle;
   //shape->getBulletTriangle(index, triangle);
@@ -236,9 +249,10 @@ void OsApp::preFrame()
   //std::cout << mRotateButtonY->getData() << ' ';
   //std::cout << std::endl;
 
-  if(mRotateButtonX->getData() == gadget::Digital::TOGGLE_OFF)
+  //Pour remettre les objets mobiles à leur place initiale
+  if((mRotateButtonX->getData() == gadget::Digital::TOGGLE_OFF) && (selected == 0))
   {
-    for(int i=0; i<selectable.size(); ++i)
+    for(unsigned int i=0; i<selectable.size(); ++i)
     {
       if(selectable[i]->getBody())
       {
@@ -260,6 +274,21 @@ void OsApp::preFrame()
   // Update the logger state information
   updateLogger();
 
+  if(selected == moteur)
+  {
+    gadget::Digital::State boutonPerceuse = mForwardButton->getData();
+    if(boutonPerceuse == gadget::Digital::TOGGLE_ON)
+    {
+      perceuseOn = true;
+      fmodCanal->setPaused(false);
+    }
+    else if(boutonPerceuse == gadget::Digital::TOGGLE_OFF)
+    {
+      perceuseOn = false;
+      fmodCanal->setPaused(true);
+      fmodCanal->setPosition(0, FMOD_TIMEUNIT_MS);
+    }
+  }
   //bool grab2 = (mGrabButton->getData() == gadget::Digital::ON);
   //
   //if ((sel2 && grab2)==true)
@@ -275,7 +304,7 @@ void OsApp::preFrame()
 void OsApp::detIntersection(const btVector3& pos)
 {
   btVector3 aabbMin, aabbMax;
-  for(int i=0; i<selectable.size(); ++i)
+  for(unsigned int i=0; i<selectable.size(); ++i)
   {
     bool intersect;
     if(selectable[i]->getBody())
@@ -337,10 +366,12 @@ void OsApp::updateGrabbing()
   // Si on n'appuie pas sur le bouton, il faut déselectionner et sortir
   if(grabState == gadget::Digital::OFF || grabState == gadget::Digital::TOGGLE_OFF)
   {
-    //if(selected==moteur) // il faut arrêter la rotation de la mèche
-    //{
-    //  theta = 0.f;
-    //}
+    if(perceuseOn) // il faut arrêter le son de la perçeuse
+    {
+      fmodCanal->setPaused(true);
+      fmodCanal->setPosition(0, FMOD_TIMEUNIT_MS);
+      perceuseOn = false;
+    }
     mSphereSelected = false;
     if(m_pickConstraint)
     {
@@ -405,60 +436,61 @@ void OsApp::updateGrabbing()
     selected->addPostTransf(wand_matrix);
   }
 
-  if(selected==moteur)
+  if(perceuseOn)
   {
     theta+=100.f;
   }
 }
 
+//cette fonction ne devrait pas servir, on désire une scène fixe...
 void OsApp::updateNavigation()
 {
-  gmtl::Matrix44f wand_matrix = mWand->getData();      // Get the wand matrix
+  //gmtl::Matrix44f wand_matrix = mWand->getData();      // Get the wand matrix
 
-  // Update navigation
-  // - Find forward direction of wand
-  // - Translate along that direction
-  float velocity(0.07f);
+  //// Update navigation
+  //// - Find forward direction of wand
+  //// - Translate along that direction
+  //float velocity(0.07f);
 
-  if(mForwardButton->getData())
-  {
-    gmtl::Vec3f z_dir = gmtl::Vec3f(0.0f, 0.0f, velocity);
-    gmtl::Vec3f dir(wand_matrix * z_dir);
-    gmtl::preMult(mNavMatrix, gmtl::makeTrans<gmtl::Matrix44f>(dir));
-  }   
+  //if(mForwardButton->getData())
+  //{
+  //  gmtl::Vec3f z_dir = gmtl::Vec3f(0.0f, 0.0f, velocity);
+  //  gmtl::Vec3f dir(wand_matrix * z_dir);
+  //  gmtl::preMult(mNavMatrix, gmtl::makeTrans<gmtl::Matrix44f>(dir));
+  //}   
 
-  if(mRotateButtonX->getData())
-  {
-    const float rot_scale(0.01f);
-    float x_rot = gmtl::makeXRot<float, 4, 4>(wand_matrix);
-    float rotationX = -1.0f * x_rot * rot_scale;
-    gmtl::preMult(mNavMatrix,
-      gmtl::makeRot<gmtl::Matrix44f>(gmtl::EulerAngleXYZf(rotationX,0.0,0.0)));
-  }
-  if(mRotateButtonY->getData())
-  {
-    const float rot_scale(0.01f);
-    float y_rot = gmtl::makeYRot<float, 4, 4>(wand_matrix);
-    float rotationY = -1.0f * y_rot * rot_scale;
-    gmtl::preMult(mNavMatrix,
-      gmtl::makeRot<gmtl::Matrix44f>(gmtl::EulerAngleXYZf(0.0,rotationY,0.0)));
-  }
-  if(mRotateButtonZ->getData())
-  {
-    const float rot_scale(0.01f);
-    float z_rot = gmtl::makeZRot<float, 4, 4>(wand_matrix);
-    float rotationZ = -1.0f * z_rot * rot_scale;
-    gmtl::preMult(mNavMatrix,
-      gmtl::makeRot<gmtl::Matrix44f>(gmtl::EulerAngleXYZf(0.0,0.0,rotationZ)));
-  }
+  //if(mRotateButtonX->getData())
+  //{
+  //  const float rot_scale(0.01f);
+  //  float x_rot = gmtl::makeXRot<float, 4, 4>(wand_matrix);
+  //  float rotationX = -1.0f * x_rot * rot_scale;
+  //  gmtl::preMult(mNavMatrix,
+  //    gmtl::makeRot<gmtl::Matrix44f>(gmtl::EulerAngleXYZf(rotationX,0.0,0.0)));
+  //}
+  //if(mRotateButtonY->getData())
+  //{
+  //  const float rot_scale(0.01f);
+  //  float y_rot = gmtl::makeYRot<float, 4, 4>(wand_matrix);
+  //  float rotationY = -1.0f * y_rot * rot_scale;
+  //  gmtl::preMult(mNavMatrix,
+  //    gmtl::makeRot<gmtl::Matrix44f>(gmtl::EulerAngleXYZf(0.0,rotationY,0.0)));
+  //}
+  //if(mRotateButtonZ->getData())
+  //{
+  //  const float rot_scale(0.01f);
+  //  float z_rot = gmtl::makeZRot<float, 4, 4>(wand_matrix);
+  //  float rotationZ = -1.0f * z_rot * rot_scale;
+  //  gmtl::preMult(mNavMatrix,
+  //    gmtl::makeRot<gmtl::Matrix44f>(gmtl::EulerAngleXYZf(0.0,0.0,rotationZ)));
+  //}
 
-  // ---- RESET ---- //
-  // If the reset button is pressed, reset the state of the application.
-  // This button takes precedence over all others.
-  if ( mForwardButton->getData() && mRotateButtonY->getData())
-  {
-    this->reset();
-  }
+  //// ---- RESET ---- //
+  //// If the reset button is pressed, reset the state of the application.
+  //// This button takes precedence over all others.
+  //if ( mForwardButton->getData() && mRotateButtonY->getData())
+  //{
+  //  this->reset();
+  //}
 }
 
 void OsApp::updateLogger()
@@ -605,7 +637,7 @@ void OsApp::draw()
   //  scow->draw_model();
   //glPopMatrix();
 
-  for(int i=0; i<selectable.size(); ++i)
+  for(unsigned int i=0; i<selectable.size(); ++i)
   {
     btRigidBody *body = selectable[i]->getBody();
     if(body)
@@ -713,7 +745,7 @@ void OsApp::draw()
   //  verb->draw_model(); 
   //glPopMatrix();
 
-  for(int i=0; i<fallRigidBodies.size(); ++i)
+  for(unsigned int i=0; i<fallRigidBodies.size(); ++i)
   {
     glPushMatrix();
       glColor3f(1.0f,0.0f,0.0f);
@@ -749,40 +781,53 @@ void OsApp::draw()
   //scow->draw_waabox();
 }
 
-//void OsApp::initFmod()
-//{ unsigned int length;
-//	int t=0;
-//  
-//	FMOD_System_Create(&system1);
-////nombre de haut parleurs utilises 
-// // FMOD_System_SetSoftwareFormat(system1,48000,FMOD_SOUND_FORMAT_PCMFLOAT,8,2,FMOD_DSP_RESAMPLER_LINEAR);
-//
-//	//initialisation du systeme
-//    FMOD_System_Init(system1, 100, FMOD_INIT_3D_RIGHTHANDED, NULL);
-//	
-//	//position initiale du listener
-//	
-//	gmtl::Matrix44f h;
-//   gmtl::invert(h, mNavMatrix);      // Nav matrix is: w_M_vw.  So invert it
-//   gmtl::Matrix44f head_matrix = h * mHead->getData();
-//
-//   // Get the point in space where the Listener is located.
-//   P0c = gmtl::makeTrans<gmtl::Point3f>(head_matrix)-mCube.getMax();
-//	//creation du systeme 
-//	
-//	FMOD_System_Set3DSettings(system1, 10.0f, 10.0f, 10.0f);
-//  FMOD_System_SetSpeakerMode (system1,FMOD_SPEAKERMODE_RAW);
-//	//creation du son du cube
-//	FMOD_System_CreateSound(system1,pathC,FMOD_3D|FMOD_LOOP_NORMAL|FMOD_CREATESAMPLE,0, &soundC);
-//	FMOD_Sound_Set3DMinMaxDistance(soundC, 1.f, 5000.0f);
-//	FMOD_Sound_GetLength(soundC,&length, FMOD_TIMEUNIT_PCM);
-//FMOD_Channel_SetSpeakerMix(channelC,0,0,0,0,0,0,0,0);
-//float levels[2] ={0,1.0f};
-//FMOD_Channel_SetSpeakerMix(channelC,1.0f,1.0f,0,0,0,0,0,0);
-//
-//}
-//
-//
+void OsApp::initFmod()
+{
+  using std::cerr;
+  using std::endl;
+
+  cerr << "*** Initialisation FMOD ***" << endl;
+
+  FMOD_RESULT result;
+
+  result = FMOD::System_Create(&fmodSystem);
+  ERRCHECK(result);
+  unsigned int version;
+  result = fmodSystem->getVersion(&version);
+  ERRCHECK(result);
+  cerr << "Version FMOD : " << version << endl;
+  cerr << "Version attendue : " << FMOD_VERSION << endl;
+  int numdrivers;
+  result = fmodSystem->getNumDrivers(&numdrivers);
+  ERRCHECK(result);
+  cerr << "NumDrivers : " << numdrivers << endl; 
+  FMOD_SPEAKERMODE mode;
+  FMOD_CAPS caps;
+  result = fmodSystem->getDriverCaps(0, &caps, 0, &mode);
+  ERRCHECK(result);
+  cerr << "caps : " << caps << " speakermode : " << mode << endl;
+  result = fmodSystem->setSpeakerMode(mode);
+  ERRCHECK(result);
+  char name[256];
+  result = fmodSystem->getDriverInfo(0, name, 256, 0);
+  ERRCHECK(result);
+  cerr << "Driver : " << name << endl;
+  int maxchannels = 10;
+  result = fmodSystem->init(maxchannels, FMOD_INIT_NORMAL, 0);
+  ERRCHECK(result);
+  cerr << "Systeme initialise avec " << maxchannels << " canaux" << endl;
+
+  result = fmodSystem->createSound("M.mp3", FMOD_DEFAULT, 0, &sonPerceuse);
+  ERRCHECK(result);
+  cerr << "sonPerceuse lu (M.mp3)" << endl;
+  result = sonPerceuse->setMode(FMOD_LOOP_NORMAL);
+  ERRCHECK(result);
+  result = fmodSystem->playSound(FMOD_CHANNEL_FREE, sonPerceuse, true, &fmodCanal);
+  ERRCHECK(result);
+
+  cerr << "*** Fin initialisation FMOD ***" << endl;
+}
+
 //void OsApp::VolumeMoteur(gmtl::Point3f pos)
 //{	float	volC;
 //	float distanceLC=0;
@@ -946,7 +991,6 @@ void OsApp::initGLState()
   //pathC= "C:\\Users\\demo\\Desktop\\cabana\\RecordedSound\\M.mp3";
   //pathS="";
 
-  //initFmod();
   //InitBulletPhysics();
 
   GLfloat light0_ambient[]  = { 0.1f,  0.1f,  0.1f, 1.0f };
@@ -1091,21 +1135,21 @@ void OsApp::addFemur()
   //}
   //of.close();
   //////////////////////////////////////////////////////////////////////////////////////////
-  std::ofstream of;
-  of.open("objmesh.txt");
-  btVector3 v1, v2, v3;
-  for(int i=0; i<11671; ++i) //pour une raison quelconque, objlib ne voit que 11671 triangles (au lieu de 11765) !
-  {
-    femur8->getTriangle(i,v1,v2,v3);
-    v1 -= centre;
-    v2 -= centre;
-    v3 -= centre;
-    v1 *= localScaling;
-    v2 *= localScaling;
-    v3 *= localScaling;
-    of << v1.x() << ' ' << v1.y() << ' ' << v1.z() << ' ' << v2.x() << ' ' << v2.y() << ' ' << v2.z() << ' ' << v3.x() << ' ' << v3.y() << ' ' << v3.z() << '\n';
-  }
-  of.close();
+  //std::ofstream of;
+  //of.open("objmesh.txt");
+  //btVector3 v1, v2, v3;
+  //for(int i=0; i<11671; ++i) //pour une raison quelconque, objlib ne voit que 11671 triangles (au lieu de 11765) ! RAISON : il y a aussi des quadrilatères....
+  //{
+  //  femur8->getTriangle(i,v1,v2,v3);
+  //  v1 -= centre;
+  //  v2 -= centre;
+  //  v3 -= centre;
+  //  v1 *= localScaling;
+  //  v2 *= localScaling;
+  //  v3 *= localScaling;
+  //  of << v1.x() << ' ' << v1.y() << ' ' << v1.z() << ' ' << v2.x() << ' ' << v2.y() << ' ' << v2.z() << ' ' << v3.x() << ' ' << v3.y() << ' ' << v3.z() << '\n';
+  //}
+  //of.close();
   //////////////////////////////////////////////////////////////////////////////////////////
   //std::cout << "Triangle Mesh : " << trimesh->getNumSubParts() << ' ' << trimesh->getNumTriangles() << '\n';
   //btBvhTriangleMeshShape* concaveShape = new btBvhTriangleMeshShape(trimesh,true);

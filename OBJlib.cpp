@@ -376,7 +376,7 @@ void MeshObj::make_bbox()
   min_y = max_y = ver[0].y;
   min_z = max_z = ver[0].z;
 
-  for (int i = 1; i < ver.size(); i++) {
+  for (unsigned int i = 1; i < ver.size(); i++) {
     if (ver[i].x < min_x) min_x = ver[i].x;
     if (ver[i].x > max_x) max_x = ver[i].x;
     if (ver[i].y < min_y) min_y = ver[i].y;
