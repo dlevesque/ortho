@@ -138,6 +138,7 @@ void OsApp::init()
   addVis1();
   addVis2();
   addVis3();
+  addTournevis();
   addCube1();
   addCube2();
   addVerb();
@@ -1495,6 +1496,33 @@ void OsApp::addVis3()
   btRigidBody *fallRigidBody = new btRigidBody(fallRigidBodyCI);
   addBody(fallRigidBody);
   scow3->setBody(fallRigidBody);
+}
+
+void OsApp::addTournevis()
+{
+  tournevis = new MeshObj("tournevis.obj");
+  tournevis->make_bbox();
+  selectable.push_back(tournevis);
+  tournevis->initTr(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-tournevis->center[0],-tournevis->center[1],-tournevis->center[2])));
+  float tvScale = 0.09f;
+  tournevis->setScale(tvScale);
+  tournevis->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
+  tournevis->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(3.9f,6.f,-0.1f)));
+  float dx, dy, dz;
+  dx = tournevis->aabox.mMax[0] - tournevis->aabox.mMin[0];
+  dy = tournevis->aabox.mMax[1] - tournevis->aabox.mMin[1];
+  dz = tournevis->aabox.mMax[2] - tournevis->aabox.mMin[2];
+  btCollisionShape *fallShape = new btBoxShape(btVector3(dx*tvScale/2, dy*tvScale/2, dz*tvScale/2));
+  btTransform tr(btQuaternion(0,0,gmtl::Math::deg2Rad(90.f)), btVector3(tournevis->trCentre()[0],tournevis->trCentre()[1],tournevis->trCentre()[2]));
+  tournevis->setInitBodyTr(tr);
+  btDefaultMotionState* fallMotionState = new btDefaultMotionState(tr);
+  btScalar mass = 1.0f;
+  btVector3 fallInertia(0, 0, 0);
+  fallShape->calculateLocalInertia(mass, fallInertia);
+  btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass, fallMotionState, fallShape, fallInertia);
+  btRigidBody *fallRigidBody = new btRigidBody(fallRigidBodyCI);
+  addBody(fallRigidBody);
+  tournevis->setBody(fallRigidBody);
 }
 
 void OsApp::addCube1()

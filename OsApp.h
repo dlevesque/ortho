@@ -92,6 +92,7 @@ public:
     delete scow1;
     delete scow2;
     delete scow3;
+    delete tournevis;
     delete cube1;
     delete cube2;
     delete verb;
@@ -212,6 +213,7 @@ private:
   MeshObj *scow1;
   MeshObj *scow2;
   MeshObj *scow3;
+  MeshObj *tournevis;
   MeshObj *cube1;
   MeshObj *cube2;
   MeshObj *verb;
@@ -270,6 +272,7 @@ private:
   void addVis1();
   void addVis2();
   void addVis3();
+  void addTournevis();
   void addCube1();
   void addCube2();
   void addVerb();
