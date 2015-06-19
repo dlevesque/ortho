@@ -24,6 +24,7 @@
  *
  *************** <auto-copyright.pl END do not edit this line> ***************/
 
+#include <windows.h>
 #include <vrj/Kernel/Kernel.h>
 #include "OsApp.h"
 

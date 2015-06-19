@@ -49,6 +49,9 @@
 
 #include <vector>
 
+#include <vhtBase.h>
+#include <vhtCore.h>
+
 #include <btBulletDynamicsCommon.h>
 
 //#include <vrj/Test/TestRunner.h>
@@ -118,6 +121,8 @@ public:
     delete dispatcher;
     delete collisionConfiguration;
     delete broadphase;
+
+    exitCGS();
   }
 
   virtual void init();
@@ -257,7 +262,10 @@ private:
   //                      m(2,0), m(2,1), m(2,2));
   //}
 
-  void initPhysics();
+  void initPhysics(); //initialisation des variables Bullet
+  void initCGS();      //initialisation du CyberGloveSystem
+  void exitCGS();
+
   void addGround();
 
   void addFemur();
@@ -289,6 +297,14 @@ private:
   FMOD::Channel *fmodCanal;
 
   bool perceuseOn;
+
+  //variables relatives au CyberGloveSystem
+  vhtCFHumanHand *m_cgsMainDroite;
+  vhtCyberGlove  *m_cgsGantDroit;
+  vhtTracker     *m_cgsForceDroite;
+  vhtCyberGrasp  *m_cgsGraspDroit;
+  vht6DofDevice  *m_cgsRcvrDroit;
+  vhtHandMaster  *m_cgsMasterDroit;
 };
 
 #endif /* _OS_APP_H_ */

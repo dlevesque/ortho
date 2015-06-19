@@ -24,6 +24,8 @@
  *
  *************** <auto-copyright.pl END do not edit this line> ***************/
 
+#include <windows.h>
+
 #include <gmtl/Point.h>
 #include <gmtl/Matrix.h>
 #include <gmtl/Containment.h>
@@ -44,6 +46,8 @@
 //#include <TestCases/SphereTestCase.h>
 
 #include <gmtl/Intersection.h>
+
+#include "CyberForce.h"
 
 #include <BulletCollision/Gimpact/btGImpactShape.h>
 #include <BulletCollision/Gimpact/btGImpactCollisionAlgorithm.h>
@@ -126,6 +130,7 @@ void OsApp::init()
   mGrabButton.init("VJButton2");
 
   initPhysics();
+  initCGS();
   addGround();
 
   addFemur();
@@ -1616,4 +1621,41 @@ void OsApp::addGround()
                 groundRigidBodyCI(0, groundMotionState, groundShape, btVector3(0, 0, 0));
   btRigidBody* groundRigidBody = new btRigidBody(groundRigidBodyCI);
   addBody(groundRigidBody);
+}
+
+void OsApp::initCGS()
+{
+  try{
+    m_cgsGantDroit = new vhtCyberGlove(vhtIOConn::getDefault("RightGlove"));
+  }
+  catch(vhtBaseException *e){
+    std::cout << "Erreur gant droit :" << e->getMessage() << std::endl;
+    return;
+  }
+  try{
+    m_cgsForceDroite = new vhtTracker(vhtIOConn::getDefault("RightForce"));
+  }
+  catch(vhtBaseException *e){
+    std::cout << "Erreur force droite :" << e->getMessage() << std::endl;
+    return;
+  }
+  try{
+    m_cgsGraspDroit = new CyberForce(vhtIOConn::getDefault("RightGrasp"));
+  }
+  catch(vhtBaseException *e){
+    std::cout << "Erreur grasp droit :" << e->getMessage() << std::endl;
+   return;
+  }
+  m_cgsRcvrDroit = m_cgsForceDroite->getLogicalDevice(0);
+  m_cgsMasterDroit = new vhtHandMaster(m_cgsGantDroit, m_cgsRcvrDroit);
+  m_cgsMainDroite = new vhtCFHumanHand(m_cgsMasterDroit, m_cgsGraspDroit);
+}
+
+void OsApp::exitCGS()
+{
+  delete m_cgsMainDroite;
+  delete m_cgsMasterDroit;
+  delete m_cgsGraspDroit;
+  delete m_cgsForceDroite;
+  delete m_cgsGantDroit;
 }

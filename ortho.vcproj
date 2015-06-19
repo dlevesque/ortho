@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="ortho"
 	ProjectGUID="{F41DB2E9-2D6E-4BA5-AAFA-28CE207C59F2}"
 	RootNamespace="ortho"
@@ -109,7 +109,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="&quot;C:\Users\levd1803\Documents\bullet-2.82-r2704\src&quot;;.;&quot;$(VJ_DEPS_DIR)\include&quot;;&quot;$(VJ_BASE_DIR)\include&quot;;&quot;C:\Users\levd1803\Documents\bullet-2.82-r2704\Extras\ConvexDecomposition&quot;;&quot;C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc&quot;"
+				AdditionalIncludeDirectories="&quot;C:\Users\Cave\Documents\bullet-2.82-r2704\src&quot;;.;&quot;$(VJ_DEPS_DIR)\include&quot;;&quot;$(VJ_BASE_DIR)\include&quot;;&quot;C:\Users\Cave\Documents\bullet-2.82-r2704\Extras\ConvexDecomposition&quot;;&quot;C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\inc&quot;;&quot;C:\Users\Cave\Documents\Visual Studio 2008\Projects\CyberGlove\include\vhandtk&quot;;&quot;C:\Users\Cave\Documents\Visual Studio 2008\Projects\CyberGlove\include\vtidm&quot;;&quot;C:\Users\Cave\Documents\Visual Studio 2008\Projects\CyberGlove\include\VClipPlugin&quot;"
 				PreprocessorDefinitions="CPPDOM_DYN_LINK;BOOST_ALL_DYN_LINK;JUGGLER_OPT;NDEBUG;_CONSOLE;WIN32"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -128,8 +128,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libnspr4.lib libplc4.lib comctl32.lib ws2_32.lib opengl32.lib glu32.lib BulletDynamics.lib BulletCollision.lib LinearMath.lib ConvexDecomposition.lib fmodex_vc.lib $(NOINHERIT)"
-				AdditionalLibraryDirectories="&quot;$(VJ_DEPS_DIR)\lib&quot;;&quot;$(VJ_BASE_DIR)\lib&quot;;&quot;C:\Users\levd1803\Documents\Visual Studio 2008\Projects\BulletBuild\lib\Release&quot;;&quot;C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib&quot;"
+				AdditionalDependencies="libnspr4.lib libplc4.lib comctl32.lib ws2_32.lib opengl32.lib glu32.lib CGS_DeviceManagerCore.lib CGS_VirtualHandRegistry.lib CGS_VirtualHandDevice.lib CGS_VirtualHandCore.lib CGS_VClipPlugin.lib BulletDynamics.lib BulletCollision.lib LinearMath.lib ConvexDecomposition.lib fmodex_vc.lib $(NOINHERIT)"
+				AdditionalLibraryDirectories="&quot;C:\Users\Cave\Documents\Visual Studio 2008\Projects\CyberGlove\lib\winnt_386\Release&quot;;&quot;$(VJ_DEPS_DIR)\lib&quot;;&quot;$(VJ_BASE_DIR)\lib&quot;;&quot;C:\Users\Cave\Documents\Visual Studio 2008\Projects\BulletBuild32\lib\Release&quot;;&quot;C:\Program Files (x86)\FMOD SoundSystem\FMOD Programmers API Windows\api\lib&quot;"
 				GenerateDebugInformation="true"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -167,6 +167,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\CyberForce.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\main.cpp"
 				>
 			</File>
@@ -184,6 +188,10 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\CyberForce.h"
+				>
+			</File>
 			<File
 				RelativePath=".\OBJlib.h"
 				>
