@@ -143,7 +143,7 @@ void OsApp::init()
   addVis1();
   addVis2();
   addVis3();
-  addTournevis();
+  //addTournevis();
   addCube1();
   addCube2();
   addVerb();
@@ -181,6 +181,24 @@ void OsApp::init()
   //    addBody(fallRigidBody);
   //  }
   //}
+
+  m_fichier[pau] = "palm.obj";
+  m_fichier[po1] = "thumb1.obj";
+  m_fichier[po2] = "thumb2.obj";
+  m_fichier[po3] = "thumb3.obj";
+  m_fichier[in1] = "finger21.obj";
+  m_fichier[in2] = "finger22.obj";
+  m_fichier[in3] = "finger23.obj";
+  m_fichier[ma1] = "finger31.obj";
+  m_fichier[ma2] = "finger32.obj";
+  m_fichier[ma3] = "finger33.obj";
+  m_fichier[an1] = "finger41.obj";
+  m_fichier[an2] = "finger42.obj";
+  m_fichier[an3] = "finger43.obj";
+  m_fichier[au1] = "finger51.obj";
+  m_fichier[au2] = "finger52.obj";
+  m_fichier[au3] = "finger53.obj";
+  addMainDroite();
 }
 
 void OsApp::contextInit()
@@ -245,15 +263,40 @@ bool OsApp::mcallbackFunc(btManifoldPoint &cp, const btCollisionObjectWrapper *o
 
 void OsApp::preFrame()
 {
-  dynamicsWorld->stepSimulation(1./60.,10,1./600.);
-  //dynamicsWorld->stepSimulation(1./60.);
+  // Update the logger state information
+  updateLogger();
+  if(mFramesToSleep > 0) return;
 
-  //std::cout << mForwardButton->getData() << ' ';
-  //std::cout << mRotateButtonX->getData() << ' ';
-  //std::cout << mGrabButton->getData() << ' ';
-  //std::cout << mRotateButtonZ->getData() << ' ';
-  //std::cout << mRotateButtonY->getData() << ' ';
-  //std::cout << std::endl;
+  dynamicsWorld->stepSimulation(1./60.,10,1./600.);
+
+  updateForces();
+
+  m_cgsGantDroit->update();
+
+  btTransform frameA, frameB;
+  frameA = m_pouce->getAFrame();
+  frameB.setIdentity();
+  frameB.setRotation(btQuaternion(0, 1.5f + m_cgsGantDroit->getData(GHM::thumb,GHM::abduct), SIMD_HALF_PI - m_cgsGantDroit->getData(GHM::thumb,GHM::metacarpal)));
+  m_pouce->setFrames(frameA,frameB);
+
+  setHingeLimit(po2, m_cgsGantDroit->getData(GHM::thumb,GHM::proximal));
+  setHingeLimit(po3, m_cgsGantDroit->getData(GHM::thumb,GHM::distal));
+
+  setHingeLimit(in1, m_cgsGantDroit->getData(GHM::index,GHM::metacarpal));
+  setHingeLimit(in2, m_cgsGantDroit->getData(GHM::index,GHM::proximal));
+  setHingeLimit(in3, m_cgsGantDroit->getData(GHM::index,GHM::distal));
+
+  setHingeLimit(ma1, m_cgsGantDroit->getData(GHM::middle,GHM::metacarpal));
+  setHingeLimit(ma2, m_cgsGantDroit->getData(GHM::middle,GHM::proximal));
+  setHingeLimit(ma3, m_cgsGantDroit->getData(GHM::middle,GHM::distal));
+
+  setHingeLimit(an1, m_cgsGantDroit->getData(GHM::ring,GHM::metacarpal));
+  setHingeLimit(an2, m_cgsGantDroit->getData(GHM::ring,GHM::proximal));
+  setHingeLimit(an3, m_cgsGantDroit->getData(GHM::ring,GHM::distal));
+
+  setHingeLimit(au1, m_cgsGantDroit->getData(GHM::pinky,GHM::metacarpal));
+  setHingeLimit(au2, m_cgsGantDroit->getData(GHM::pinky,GHM::proximal));
+  setHingeLimit(au3, m_cgsGantDroit->getData(GHM::pinky,GHM::distal));
 
   //Pour remettre les objets mobiles à leur place initiale
   if((mRotateButtonX->getData() == gadget::Digital::TOGGLE_OFF) && (selected == 0))
@@ -276,9 +319,6 @@ void OsApp::preFrame()
   updateGrabbing();
   // Update the state of navigation
   updateNavigation();
-
-  // Update the logger state information
-  updateLogger();
 
   if(selected == moteur)
   {
@@ -782,9 +822,7 @@ void OsApp::draw()
     drawSphere(mSphere, mSphereIsect, mSphereSelected);
   glPopMatrix();
 
-
-  //moteur->draw_waabox();
-  //scow->draw_waabox();
+  drawMainDroite();
 }
 
 void OsApp::initFmod()
@@ -1658,4 +1696,192 @@ void OsApp::exitCGS()
   delete m_cgsGraspDroit;
   delete m_cgsForceDroite;
   delete m_cgsGantDroit;
+}
+
+void OsApp::addMainDroite()
+{
+  addPhalange(pau);
+  addPhalange(po1);
+  addPhalange(po2);
+  addPhalange(po3);
+  addPhalange(in1);
+  addPhalange(in2);
+  addPhalange(in3);
+  addPhalange(ma1);
+  addPhalange(ma2);
+  addPhalange(ma3);
+  addPhalange(an1);
+  addPhalange(an2);
+  addPhalange(an3);
+  addPhalange(au1);
+  addPhalange(au2);
+  addPhalange(au3);
+}
+
+void OsApp::addPhalange(OsApp::doigts phal, bool mainGauche)
+{
+  btVector3 localScaling(m_scaleMain,m_scaleMain,m_scaleMain);
+  std::string fichier = m_chemin+m_fichier[phal];
+  MeshObj *phalMesh = new MeshObj(fichier);
+  m_mainDroiteMeshObj[phal] = phalMesh;
+  phalMesh->make_bbox();
+  phalMesh->setScale(m_scaleMain);
+
+  ConvexDecomposition::WavefrontObj wo;
+  wo.loadObj(fichier.c_str());
+  btVector3 centre(0,0,0);
+  buildTrimesh(wo, &m_trimesh[phal], centre, localScaling);
+  if(mainGauche)
+  {
+    //inverser coordonnées x du trimesh (à venir)
+  }
+
+  btTransform tr;
+  tr.setIdentity();
+  phalMesh->setInitBodyTr(tr);
+  btDefaultMotionState *phalMotionState = new btDefaultMotionState(tr);
+  btScalar mass = 1.f;
+  btVector3 inertia(0.f,0.f,0.f);
+
+  btGImpactMeshShape *concaveShape = new btGImpactMeshShape(&m_trimesh[phal]);
+  concaveShape->updateBound();
+  concaveShape->calculateLocalInertia(mass,inertia);
+  btRigidBody::btRigidBodyConstructionInfo rbCI(mass, phalMotionState, concaveShape, inertia);
+
+  m_mainDroiteRB[phal] = new btRigidBody(rbCI);
+  m_mainDroiteRB[phal]->setActivationState(DISABLE_DEACTIVATION);
+  m_mainDroiteRB[phal]->setFriction(1000.);
+  //addBodyGr(m_mainDroiteRB[phal],1,2);
+  addBody(m_mainDroiteRB[phal]);
+  phalMesh->setBody(m_mainDroiteRB[phal]);
+
+  switch(phal)
+  {
+  case pau:
+  case po3:
+  case in3:
+  case ma3:
+  case an3:
+  case au3:
+    m_mainDroiteRB[phal]->setCollisionFlags(
+      m_mainDroiteRB[phal]->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
+    break;
+  default:
+    break;
+  }
+}
+
+void OsApp::drawMainDroite()
+{
+  drawPhalange(pau);
+  drawPhalange(po1);
+  drawPhalange(po2);
+  drawPhalange(po3);
+  drawPhalange(in1);
+  drawPhalange(in2);
+  drawPhalange(in3);
+  drawPhalange(ma1);
+  drawPhalange(ma2);
+  drawPhalange(ma3);
+  drawPhalange(an1);
+  drawPhalange(an2);
+  drawPhalange(an3);
+  drawPhalange(au1);
+  drawPhalange(au2);
+  drawPhalange(au3);
+}
+
+void OsApp::drawPhalange(OsApp::doigts phal, bool mainGauche)
+{
+  float mat[16];
+  btTransform t;
+
+  if(mainGauche)
+  {}
+  else
+  {
+    m_mainDroiteRB[phal]->getMotionState()->getWorldTransform(t);
+    t.getOpenGLMatrix(mat);
+    glPushMatrix();
+      glMultMatrixf(mat);
+      glScalef(m_scaleMain,m_scaleMain,m_scaleMain);
+      m_mainDroiteMeshObj[phal]->draw_model();
+    glPopMatrix();
+  }
+}
+
+void OsApp::addContraintes()
+{
+  btVector3 zeroVec(0.f,0.f,0.f);
+
+  m_dof6[pau] = new btGeneric6DofConstraint(*m_mainDroiteRB[pau],btTransform::getIdentity(),false);
+  m_dof6[pau]->setLinearLowerLimit(zeroVec);
+  m_dof6[pau]->setLinearUpperLimit(zeroVec);
+  m_dof6[pau]->setAngularLowerLimit(zeroVec);
+  m_dof6[pau]->setAngularUpperLimit(zeroVec);
+  dynamicsWorld->addConstraint(m_dof6[pau],true);
+
+  btTransform frameA, frameB;
+  frameA.setIdentity();
+  frameA.setOrigin(btVector3(4.5,0,2)*m_scaleMain);
+  frameB.setIdentity();
+  frameB.setOrigin(btVector3(0,0,-0.5)*m_scaleMain);
+  m_dof6[po1] = new btGeneric6DofConstraint(*m_mainDroiteRB[pau], *m_mainDroiteRB[po1], frameA, frameB, false);
+  m_dof6[po1]->setLinearLowerLimit(zeroVec);
+  m_dof6[po1]->setLinearUpperLimit(zeroVec);
+  m_dof6[po1]->setAngularLowerLimit(btVector3(1,1,1));
+  m_dof6[po1]->setAngularUpperLimit(zeroVec);
+  dynamicsWorld->addConstraint(m_dof6[po1],true);
+
+  frameA.setIdentity();
+  frameB.setIdentity();
+  m_pouce = new btConeTwistConstraint(*m_mainDroiteRB[pau], *m_mainDroiteRB[po1], frameA, frameB);
+  m_pouce->setLimit(0,0,0);
+  dynamicsWorld->addConstraint(m_pouce,true);
+
+  addHingeContrainte(po1, po2, btVector3(0,0,6),    btVector3(0,0,-0.5));
+  addHingeContrainte(po2, po3, btVector3(0,0,3),    btVector3(0,0,-0.5));
+  addHingeContrainte(pau, in1, btVector3(3.2,0,10), btVector3(0,0,-0.5));
+  addHingeContrainte(in1, in2, btVector3(0,0,5),    btVector3(0,0,-0.5));
+  addHingeContrainte(in2, in3, btVector3(0,0,3),    btVector3(0,0,-0.5));
+  addHingeContrainte(pau, ma1, btVector3(1,0,11),   btVector3(0,0,-0.5));
+  addHingeContrainte(ma1, ma2, btVector3(0,0,5),    btVector3(0,0,-0.5));
+  addHingeContrainte(ma2, ma3, btVector3(0,0,3),    btVector3(0,0,-0.5));
+  addHingeContrainte(pau, an1, btVector3(-1.5,0,10),btVector3(0,0,-0.5));
+  addHingeContrainte(an1, an2, btVector3(0,0,4.5),  btVector3(0,0,-0.5));
+  addHingeContrainte(an2, an3, btVector3(0,0,3),    btVector3(0,0,-0.5));
+  addHingeContrainte(pau, au1, btVector3(-3.8,0,10),btVector3(0,0,-0.5));
+  addHingeContrainte(au1, au2, btVector3(0,0,4),    btVector3(0,0,-0.5));
+  addHingeContrainte(au2, au3, btVector3(0,0,2),    btVector3(0,0,-0.5));
+}
+
+void OsApp::addHingeContrainte(OsApp::doigts do1, OsApp::doigts do2, const btVector3& v1, const btVector3& v2)
+{
+  static const btVector3 xvec(1,0,0);
+  m_hinge[do2] = new btHingeConstraint(*m_mainDroiteRB[do1], *m_mainDroiteRB[do2], v1*m_scaleMain, v2*m_scaleMain, xvec, xvec);
+  dynamicsWorld->addConstraint(m_hinge[do2],true);
+}
+
+void OsApp::updateForces()
+{
+	static double forces[8] = {0.04,0.04,0.04,0.04,0.04,0.0,0.0,0.0};
+
+  m_cgsRcvrDroit->update();
+  double xpos = m_cgsRcvrDroit->getRawData(vht6DofDevice::Freedom::xPos);
+  double ypos = m_cgsRcvrDroit->getRawData(vht6DofDevice::Freedom::yPos);
+  double zpos = m_cgsRcvrDroit->getRawData(vht6DofDevice::Freedom::zPos);
+  m_dof6[pau]->getFrameOffsetA().setOrigin(btVector3(xpos,ypos,zpos));
+
+  m_cgsMainDroite->update();
+  vhtTransform3D vhtPose = m_cgsMainDroite->getKinematics()->getKinematics(GHM::palm);
+  vhtPose.rotZ(-M_PI_2);
+  vhtPose.rotX(M_PI_2);
+  vhtPose.rotY(-M_PI_2);
+  vhtQuaternion vhtPoseQ;
+  vhtPose.getRotation(vhtPoseQ);
+  double comps[4];
+  vhtPoseQ.getComponents(comps);
+  m_dof6[pau]->getFrameOffsetA().setRotation(btQuaternion(comps[1],comps[2],comps[3],comps[0])); //ATTENTION ! ordre des composantes différent !
+
+  m_cgsGraspDroit->setForce(forces);
 }

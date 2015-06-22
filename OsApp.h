@@ -60,6 +60,8 @@
 
 #include <cd_wavefront.h>
 
+#include <string>
+
 class OsApp : public vrj::GlApp
 {
 public:
@@ -68,11 +70,12 @@ public:
     , mSphereQuad(NULL)
     , mSphereIsect(false)
     , mSphereSelected(false)
-    , mFramesToSleep(25)
+    , mFramesToSleep(50)
     , x_axis(gmtl::Vec3f(1.f,0.f,0.f))
     , y_axis(gmtl::Vec3f(0.f,1.f,0.f))
     , z_axis(gmtl::Vec3f(0.f,0.f,1.f))
-    //, mTestRunner(NULL)
+    , m_chemin("C:/Users/Cave/Desktop/hand model files/")
+    , m_scaleMain(0.2)
   {
     initShapes();
   }
@@ -305,6 +308,31 @@ private:
   vhtCyberGrasp  *m_cgsGraspDroit;
   vht6DofDevice  *m_cgsRcvrDroit;
   vhtHandMaster  *m_cgsMasterDroit;
+
+  enum doigts {pau = 0, po1, po2, po3, in1, in2, in3, ma1, ma2, ma3, an1, an2, an3, au1, au2, au3, MAX_DOIGTS};
+  std::string    m_chemin; //chemin des fichiers .obj des parties de la main
+  std::string    m_fichier[MAX_DOIGTS];
+  float          m_scaleMain;
+  MeshObj       *m_mainDroiteMeshObj[MAX_DOIGTS];
+  btTriangleMesh m_trimesh[MAX_DOIGTS];
+  btRigidBody   *m_mainDroiteRB[MAX_DOIGTS];
+
+  btGeneric6DofConstraint *m_dof6[MAX_DOIGTS];
+  btConeTwistConstraint   *m_pouce;
+  btHingeConstraint       *m_hinge[MAX_DOIGTS];
+
+  void addMainDroite();
+  void addPhalange(enum doigts phal, bool mainGauche = false);
+  void drawMainDroite();
+  void drawPhalange(enum doigts phal, bool mainGauche = false);
+  void addContraintes();
+  void addHingeContrainte(enum doigts, enum doigts, const btVector3&, const btVector3&);
+
+  void updateForces();
+  void setHingeLimit(enum doigts phal, double angle, bool mainGauche = false)
+  {
+    m_hinge[phal]->setLimit(angle,angle);
+  }
 };
 
 #endif /* _OS_APP_H_ */
