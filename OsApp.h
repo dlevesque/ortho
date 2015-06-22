@@ -75,7 +75,8 @@ public:
     , y_axis(gmtl::Vec3f(0.f,1.f,0.f))
     , z_axis(gmtl::Vec3f(0.f,0.f,1.f))
     , m_chemin("C:/Users/Cave/Desktop/hand model files/")
-    , m_scaleMain(0.03)
+    , m_scaleMain(0.035)
+    , m_scaleMotion(1.f)
   {
     initShapes();
   }
@@ -313,6 +314,7 @@ private:
   std::string    m_chemin; //chemin des fichiers .obj des parties de la main
   std::string    m_fichier[MAX_DOIGTS];
   float          m_scaleMain;
+  float          m_scaleMotion;
   MeshObj       *m_mainDroiteMeshObj[MAX_DOIGTS];
   btTriangleMesh m_trimesh[MAX_DOIGTS];
   btRigidBody   *m_mainDroiteRB[MAX_DOIGTS];

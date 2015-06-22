@@ -1140,31 +1140,31 @@ void OsApp::addFemur()
   btVector3 localScaling(0.0023f,0.0023f,0.0023f);
   btVector3 centre(femur8->center[0],femur8->center[1],femur8->center[2]);
   buildTrimesh(wo,trimesh,centre,localScaling);
-  btIndexedMesh& mesh = trimesh->getIndexedMeshArray()[0];
-  std::cout << "Vertex Type : ";
-  switch(mesh.m_vertexType)
-  {
-  case PHY_FLOAT: std::cout << "PHY_FLOAT "; break; // <==
-  case PHY_DOUBLE: std::cout << "PHY_DOUBLE "; break;
-  case PHY_INTEGER: std::cout << "PHY_INTEGER "; break;
-  case PHY_SHORT: std::cout << "PHY_SHORT "; break;
-  case PHY_FIXEDPOINT88: std::cout << "PHY_FIXEDPOINT88 "; break;
-  case PHY_UCHAR: std::cout << "PHY_UCHAR "; break;
-  default: std::cout << "??? "; break;
-  }
-  std::cout << "Index Type : ";
-  switch(mesh.m_indexType)
-  {
-  case PHY_FLOAT: std::cout << "PHY_FLOAT "; break;
-  case PHY_DOUBLE: std::cout << "PHY_DOUBLE "; break;
-  case PHY_INTEGER: std::cout << "PHY_INTEGER "; break; // <==
-  case PHY_SHORT: std::cout << "PHY_SHORT "; break;
-  case PHY_FIXEDPOINT88: std::cout << "PHY_FIXEDPOINT88 "; break;
-  case PHY_UCHAR: std::cout << "PHY_UCHAR "; break;
-  default: std::cout << "??? "; break;
-  }
-  std::cout << '\n';
-  std::cout << mesh.m_vertexStride << ' ' << mesh.m_triangleIndexStride << '\n';
+  //btIndexedMesh& mesh = trimesh->getIndexedMeshArray()[0];
+  //std::cout << "Vertex Type : ";
+  //switch(mesh.m_vertexType)
+  //{
+  //case PHY_FLOAT: std::cout << "PHY_FLOAT "; break; // <==
+  //case PHY_DOUBLE: std::cout << "PHY_DOUBLE "; break;
+  //case PHY_INTEGER: std::cout << "PHY_INTEGER "; break;
+  //case PHY_SHORT: std::cout << "PHY_SHORT "; break;
+  //case PHY_FIXEDPOINT88: std::cout << "PHY_FIXEDPOINT88 "; break;
+  //case PHY_UCHAR: std::cout << "PHY_UCHAR "; break;
+  //default: std::cout << "??? "; break;
+  //}
+  //std::cout << "Index Type : ";
+  //switch(mesh.m_indexType)
+  //{
+  //case PHY_FLOAT: std::cout << "PHY_FLOAT "; break;
+  //case PHY_DOUBLE: std::cout << "PHY_DOUBLE "; break;
+  //case PHY_INTEGER: std::cout << "PHY_INTEGER "; break; // <==
+  //case PHY_SHORT: std::cout << "PHY_SHORT "; break;
+  //case PHY_FIXEDPOINT88: std::cout << "PHY_FIXEDPOINT88 "; break;
+  //case PHY_UCHAR: std::cout << "PHY_UCHAR "; break;
+  //default: std::cout << "??? "; break;
+  //}
+  //std::cout << '\n';
+  //std::cout << mesh.m_vertexStride << ' ' << mesh.m_triangleIndexStride << '\n';
   ///////////////////////////////////////////////////////////////////////////////////////
   //std::ofstream of;
   //of.open("trimesh.txt");
@@ -1330,15 +1330,23 @@ void OsApp::addPerceuse()
   //moteur->print();
   //std::cout << moteur->center[0] << ' ' << moteur->center[1] << ' ' << moteur->center[2] << std::endl;
   moteur->setScale(0.0017f);
-  //moteur->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(-10.0f), y_axis )));
-  //moteur->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(150.0f), z_axis )));
-  //moteur->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(80.0f), x_axis )));
-  //moteur->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(2000.9f*0.0017,1750.0f*0.0017,250.0f*0.0017)));
+  ////moteur->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(-10.0f), y_axis )));
+  ////moteur->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(150.0f), z_axis )));
+  ////moteur->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(80.0f), x_axis )));
+  ////moteur->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(2000.9f*0.0017,1750.0f*0.0017,250.0f*0.0017)));
   float dx, dy, dz;
-  dx = moteur->aabox.mMax[0] - moteur->aabox.mMin[0];
-  dy = moteur->aabox.mMax[1] - moteur->aabox.mMin[1];
-  dz = moteur->aabox.mMax[2] - moteur->aabox.mMin[2];
-  btCollisionShape *moteurShape = new btBoxShape(btVector3(dx*0.0017/2, dy*0.0017/2, dz*0.0017/2));
+  //dx = moteur->aabox.mMax[0] - moteur->aabox.mMin[0];
+  //dy = moteur->aabox.mMax[1] - moteur->aabox.mMin[1];
+  //dz = moteur->aabox.mMax[2] - moteur->aabox.mMin[2];
+  //btCollisionShape *moteurShape = new btBoxShape(btVector3(dx*0.0017/2, dy*0.0017/2, dz*0.0017/2));
+  ConvexDecomposition::WavefrontObj wo;
+  wo.loadObj("moteur.obj");
+  trimesh = new btTriangleMesh;
+  btVector3 localScaling(0.0017f,0.0017f,0.0017f);
+  btVector3 centre(moteur->center[0],moteur->center[1],moteur->center[2]);
+  buildTrimesh(wo,trimesh,centre,localScaling);
+  btGImpactMeshShape *moteurShape = new btGImpactMeshShape(trimesh);
+  moteurShape->updateBound();
 
   meche = new MeshObj("meche.obj");
   meche->make_bbox();
@@ -1364,7 +1372,7 @@ void OsApp::addPerceuse()
   compound->addChildShape(moteurTr, moteurShape);
   compound->addChildShape(mecheTr, mecheShape);
 
-  btTransform tr(btQuaternion(0.f,gmtl::Math::deg2Rad(90.f),0.f), btVector3(3.4f,5.075f,0.425f));
+  btTransform tr(btQuaternion(gmtl::Math::deg2Rad(180.f),gmtl::Math::deg2Rad(90.f),0.f), btVector3(3.4f,4.075f,0.425f));
   moteur->setInitBodyTr(tr);
   btDefaultMotionState* fallMotionState = new btDefaultMotionState(tr);
   btScalar mass = 30.f;
@@ -1868,9 +1876,9 @@ void OsApp::updateForces()
 	static double forces[8] = {0.04,0.04,0.04,0.04,0.04,0.0,0.0,0.0};
 
   m_cgsRcvrDroit->update();
-  double xpos = m_cgsRcvrDroit->getRawData(vht6DofDevice::Freedom::xPos);
-  double ypos = m_cgsRcvrDroit->getRawData(vht6DofDevice::Freedom::yPos);
-  double zpos = m_cgsRcvrDroit->getRawData(vht6DofDevice::Freedom::zPos);
+  double xpos = m_scaleMotion*m_cgsRcvrDroit->getRawData(vht6DofDevice::Freedom::xPos);
+  double ypos = m_scaleMotion*m_cgsRcvrDroit->getRawData(vht6DofDevice::Freedom::yPos);
+  double zpos = m_scaleMotion*m_cgsRcvrDroit->getRawData(vht6DofDevice::Freedom::zPos);
   m_dof6[pau]->getFrameOffsetA().setOrigin(btVector3(xpos,ypos,zpos));
 
   m_cgsMainDroite->update();
