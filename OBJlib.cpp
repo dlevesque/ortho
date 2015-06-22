@@ -43,7 +43,7 @@ vector<string> splitSpace(string s)
         {
             if(i==s.size()-1)
                 s1+=s[i];
-            ret.push_back(s1);
+            if(s1!="") ret.push_back(s1);
             s1="";
         }
         else

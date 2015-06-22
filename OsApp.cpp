@@ -199,6 +199,7 @@ void OsApp::init()
   m_fichier[au2] = "finger52.obj";
   m_fichier[au3] = "finger53.obj";
   addMainDroite();
+  addContraintes();
 }
 
 void OsApp::contextInit()
@@ -269,34 +270,34 @@ void OsApp::preFrame()
 
   dynamicsWorld->stepSimulation(1./60.,10,1./600.);
 
-  updateForces();
+  //updateForces();
 
-  m_cgsGantDroit->update();
+  //m_cgsGantDroit->update();
 
-  btTransform frameA, frameB;
-  frameA = m_pouce->getAFrame();
-  frameB.setIdentity();
-  frameB.setRotation(btQuaternion(0, 1.5f + m_cgsGantDroit->getData(GHM::thumb,GHM::abduct), SIMD_HALF_PI - m_cgsGantDroit->getData(GHM::thumb,GHM::metacarpal)));
-  m_pouce->setFrames(frameA,frameB);
+  //btTransform frameA, frameB;
+  //frameA = m_pouce->getAFrame();
+  //frameB.setIdentity();
+  //frameB.setRotation(btQuaternion(0, 1.5f + m_cgsGantDroit->getData(GHM::thumb,GHM::abduct), SIMD_HALF_PI - m_cgsGantDroit->getData(GHM::thumb,GHM::metacarpal)));
+  //m_pouce->setFrames(frameA,frameB);
 
-  setHingeLimit(po2, m_cgsGantDroit->getData(GHM::thumb,GHM::proximal));
-  setHingeLimit(po3, m_cgsGantDroit->getData(GHM::thumb,GHM::distal));
+  //setHingeLimit(po2, m_cgsGantDroit->getData(GHM::thumb,GHM::proximal));
+  //setHingeLimit(po3, m_cgsGantDroit->getData(GHM::thumb,GHM::distal));
 
-  setHingeLimit(in1, m_cgsGantDroit->getData(GHM::index,GHM::metacarpal));
-  setHingeLimit(in2, m_cgsGantDroit->getData(GHM::index,GHM::proximal));
-  setHingeLimit(in3, m_cgsGantDroit->getData(GHM::index,GHM::distal));
+  //setHingeLimit(in1, m_cgsGantDroit->getData(GHM::index,GHM::metacarpal));
+  //setHingeLimit(in2, m_cgsGantDroit->getData(GHM::index,GHM::proximal));
+  //setHingeLimit(in3, m_cgsGantDroit->getData(GHM::index,GHM::distal));
 
-  setHingeLimit(ma1, m_cgsGantDroit->getData(GHM::middle,GHM::metacarpal));
-  setHingeLimit(ma2, m_cgsGantDroit->getData(GHM::middle,GHM::proximal));
-  setHingeLimit(ma3, m_cgsGantDroit->getData(GHM::middle,GHM::distal));
+  //setHingeLimit(ma1, m_cgsGantDroit->getData(GHM::middle,GHM::metacarpal));
+  //setHingeLimit(ma2, m_cgsGantDroit->getData(GHM::middle,GHM::proximal));
+  //setHingeLimit(ma3, m_cgsGantDroit->getData(GHM::middle,GHM::distal));
 
-  setHingeLimit(an1, m_cgsGantDroit->getData(GHM::ring,GHM::metacarpal));
-  setHingeLimit(an2, m_cgsGantDroit->getData(GHM::ring,GHM::proximal));
-  setHingeLimit(an3, m_cgsGantDroit->getData(GHM::ring,GHM::distal));
+  //setHingeLimit(an1, m_cgsGantDroit->getData(GHM::ring,GHM::metacarpal));
+  //setHingeLimit(an2, m_cgsGantDroit->getData(GHM::ring,GHM::proximal));
+  //setHingeLimit(an3, m_cgsGantDroit->getData(GHM::ring,GHM::distal));
 
-  setHingeLimit(au1, m_cgsGantDroit->getData(GHM::pinky,GHM::metacarpal));
-  setHingeLimit(au2, m_cgsGantDroit->getData(GHM::pinky,GHM::proximal));
-  setHingeLimit(au3, m_cgsGantDroit->getData(GHM::pinky,GHM::distal));
+  //setHingeLimit(au1, m_cgsGantDroit->getData(GHM::pinky,GHM::metacarpal));
+  //setHingeLimit(au2, m_cgsGantDroit->getData(GHM::pinky,GHM::proximal));
+  //setHingeLimit(au3, m_cgsGantDroit->getData(GHM::pinky,GHM::distal));
 
   //Pour remettre les objets mobiles à leur place initiale
   if((mRotateButtonX->getData() == gadget::Digital::TOGGLE_OFF) && (selected == 0))

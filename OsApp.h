@@ -70,7 +70,7 @@ public:
     , mSphereQuad(NULL)
     , mSphereIsect(false)
     , mSphereSelected(false)
-    , mFramesToSleep(50)
+    , mFramesToSleep(25)
     , x_axis(gmtl::Vec3f(1.f,0.f,0.f))
     , y_axis(gmtl::Vec3f(0.f,1.f,0.f))
     , z_axis(gmtl::Vec3f(0.f,0.f,1.f))
