@@ -215,50 +215,50 @@ bool OsApp::callbackFunc(btManifoldPoint &cp, const btCollisionObjectWrapper *ob
 
 bool OsApp::mcallbackFunc(btManifoldPoint &cp, const btCollisionObjectWrapper *obj1, int id1, int index1, const btCollisionObjectWrapper *obj2, int id2, int index2)
 {
-  const btCollisionObject *o1 = obj1->getCollisionObject();
-  const btCollisionObject *o2 = obj2->getCollisionObject();
-  int index = -1;
-  
-  if(o1 == femur8->getBody())
-  {
-    //std::cout << "o1 == femur " << id1 << " " << index1 << std::endl;
-    index=index1;
-  }
-  //if(o1 == platte->getBody())
-  //  std::cout << "o1 == plaque" << std::endl;
-  if(o2 == femur8->getBody())
-  {
-    //std::cout << "o2 == femur" << id2 << " " << index2 << std::endl;
-    index=index2;
-  }
-  //if(o2 == platte->getBody())
-  //  std::cout << "o2 == plaque" << std::endl;
-
-  if(index == -1) return false;
-  //std::cout << index << '\n';
-  btIndexedMesh& mesh = trimesh->getIndexedMeshArray()[0];
-  unsigned int *gfxbase = (unsigned int *)(mesh.m_triangleIndexBase + index * mesh.m_triangleIndexStride);
-  for(int j=0; j<3; ++j)
-  {
-    int vindex = gfxbase[j];
-    btScalar *vbase = (btScalar*)(mesh.m_vertexBase + vindex * mesh.m_vertexStride);
-    //std::cout << vbase[0] << ' ' << vbase[1] << ' ' << vbase[2] << '\n';
-  }
-  btVector3 v1,v2,v3;
-  femur8->getTriangle(index,v1,v2,v3);
-  btVector3 centre(femur8->center[0],femur8->center[1],femur8->center[2]);
-  btVector3 v = /* femur8->getBody()->getWorldTransform() * */(femur8->getScale()[0] * (v1-centre));
-  //std::cout << v[0] << ' ' << v[1] << ' ' << v[2] << '\n';
-  //btGImpactMeshShape *shape = static_cast<btGImpactMeshShape*>(femur8->getBody()->getCollisionShape());
-  //btTriangleShapeEx triangle;
-  //shape->getBulletTriangle(index, triangle);
-  //btVector3 vert;
-  //std::cout << index << std::endl;
-  //for(int i=0; i<triangle.getNumVertices(); ++i)
+  //const btCollisionObject *o1 = obj1->getCollisionObject();
+  //const btCollisionObject *o2 = obj2->getCollisionObject();
+  //int index = -1;
+  //
+  //if(o1 == femur8->getBody())
   //{
-  //  triangle.getVertex(i,vert);
-  //  std::cout << vert.getX() << " " << vert.getY() << " " << vert.getZ() << std::endl;
+  //  //std::cout << "o1 == femur " << id1 << " " << index1 << std::endl;
+  //  index=index1;
   //}
+  ////if(o1 == platte->getBody())
+  ////  std::cout << "o1 == plaque" << std::endl;
+  //if(o2 == femur8->getBody())
+  //{
+  //  //std::cout << "o2 == femur" << id2 << " " << index2 << std::endl;
+  //  index=index2;
+  //}
+  ////if(o2 == platte->getBody())
+  ////  std::cout << "o2 == plaque" << std::endl;
+
+  //if(index == -1) return false;
+  ////std::cout << index << '\n';
+  //btIndexedMesh& mesh = trimesh->getIndexedMeshArray()[0];
+  //unsigned int *gfxbase = (unsigned int *)(mesh.m_triangleIndexBase + index * mesh.m_triangleIndexStride);
+  //for(int j=0; j<3; ++j)
+  //{
+  //  int vindex = gfxbase[j];
+  //  btScalar *vbase = (btScalar*)(mesh.m_vertexBase + vindex * mesh.m_vertexStride);
+  //  //std::cout << vbase[0] << ' ' << vbase[1] << ' ' << vbase[2] << '\n';
+  //}
+  //btVector3 v1,v2,v3;
+  //femur8->getTriangle(index,v1,v2,v3);
+  //btVector3 centre(femur8->center[0],femur8->center[1],femur8->center[2]);
+  //btVector3 v = /* femur8->getBody()->getWorldTransform() * */(femur8->getScale()[0] * (v1-centre));
+  ////std::cout << v[0] << ' ' << v[1] << ' ' << v[2] << '\n';
+  ////btGImpactMeshShape *shape = static_cast<btGImpactMeshShape*>(femur8->getBody()->getCollisionShape());
+  ////btTriangleShapeEx triangle;
+  ////shape->getBulletTriangle(index, triangle);
+  ////btVector3 vert;
+  ////std::cout << index << std::endl;
+  ////for(int i=0; i<triangle.getNumVertices(); ++i)
+  ////{
+  ////  triangle.getVertex(i,vert);
+  ////  std::cout << vert.getX() << " " << vert.getY() << " " << vert.getZ() << std::endl;
+  ////}
   return false;
 }
 
@@ -270,34 +270,34 @@ void OsApp::preFrame()
 
   dynamicsWorld->stepSimulation(1./60.,10,1./600.);
 
-  //updateForces();
+  updateForces();
 
-  //m_cgsGantDroit->update();
+  m_cgsGantDroit->update();
 
-  //btTransform frameA, frameB;
-  //frameA = m_pouce->getAFrame();
-  //frameB.setIdentity();
-  //frameB.setRotation(btQuaternion(0, 1.5f + m_cgsGantDroit->getData(GHM::thumb,GHM::abduct), SIMD_HALF_PI - m_cgsGantDroit->getData(GHM::thumb,GHM::metacarpal)));
-  //m_pouce->setFrames(frameA,frameB);
+  btTransform frameA, frameB;
+  frameA = m_pouce->getAFrame();
+  frameB.setIdentity();
+  frameB.setRotation(btQuaternion(0, 1.5f + m_cgsGantDroit->getData(GHM::thumb,GHM::abduct), SIMD_HALF_PI - m_cgsGantDroit->getData(GHM::thumb,GHM::metacarpal)));
+  m_pouce->setFrames(frameA,frameB);
 
-  //setHingeLimit(po2, m_cgsGantDroit->getData(GHM::thumb,GHM::proximal));
-  //setHingeLimit(po3, m_cgsGantDroit->getData(GHM::thumb,GHM::distal));
+  setHingeLimit(po2, m_cgsGantDroit->getData(GHM::thumb,GHM::proximal));
+  setHingeLimit(po3, m_cgsGantDroit->getData(GHM::thumb,GHM::distal));
 
-  //setHingeLimit(in1, m_cgsGantDroit->getData(GHM::index,GHM::metacarpal));
-  //setHingeLimit(in2, m_cgsGantDroit->getData(GHM::index,GHM::proximal));
-  //setHingeLimit(in3, m_cgsGantDroit->getData(GHM::index,GHM::distal));
+  setHingeLimit(in1, m_cgsGantDroit->getData(GHM::index,GHM::metacarpal));
+  setHingeLimit(in2, m_cgsGantDroit->getData(GHM::index,GHM::proximal));
+  setHingeLimit(in3, m_cgsGantDroit->getData(GHM::index,GHM::distal));
 
-  //setHingeLimit(ma1, m_cgsGantDroit->getData(GHM::middle,GHM::metacarpal));
-  //setHingeLimit(ma2, m_cgsGantDroit->getData(GHM::middle,GHM::proximal));
-  //setHingeLimit(ma3, m_cgsGantDroit->getData(GHM::middle,GHM::distal));
+  setHingeLimit(ma1, m_cgsGantDroit->getData(GHM::middle,GHM::metacarpal));
+  setHingeLimit(ma2, m_cgsGantDroit->getData(GHM::middle,GHM::proximal));
+  setHingeLimit(ma3, m_cgsGantDroit->getData(GHM::middle,GHM::distal));
 
-  //setHingeLimit(an1, m_cgsGantDroit->getData(GHM::ring,GHM::metacarpal));
-  //setHingeLimit(an2, m_cgsGantDroit->getData(GHM::ring,GHM::proximal));
-  //setHingeLimit(an3, m_cgsGantDroit->getData(GHM::ring,GHM::distal));
+  setHingeLimit(an1, m_cgsGantDroit->getData(GHM::ring,GHM::metacarpal));
+  setHingeLimit(an2, m_cgsGantDroit->getData(GHM::ring,GHM::proximal));
+  setHingeLimit(an3, m_cgsGantDroit->getData(GHM::ring,GHM::distal));
 
-  //setHingeLimit(au1, m_cgsGantDroit->getData(GHM::pinky,GHM::metacarpal));
-  //setHingeLimit(au2, m_cgsGantDroit->getData(GHM::pinky,GHM::proximal));
-  //setHingeLimit(au3, m_cgsGantDroit->getData(GHM::pinky,GHM::distal));
+  setHingeLimit(au1, m_cgsGantDroit->getData(GHM::pinky,GHM::metacarpal));
+  setHingeLimit(au2, m_cgsGantDroit->getData(GHM::pinky,GHM::proximal));
+  setHingeLimit(au3, m_cgsGantDroit->getData(GHM::pinky,GHM::distal));
 
   //Pour remettre les objets mobiles à leur place initiale
   if((mRotateButtonX->getData() == gadget::Digital::TOGGLE_OFF) && (selected == 0))

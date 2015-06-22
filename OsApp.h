@@ -75,7 +75,7 @@ public:
     , y_axis(gmtl::Vec3f(0.f,1.f,0.f))
     , z_axis(gmtl::Vec3f(0.f,0.f,1.f))
     , m_chemin("C:/Users/Cave/Desktop/hand model files/")
-    , m_scaleMain(0.2)
+    , m_scaleMain(0.03)
   {
     initShapes();
   }
