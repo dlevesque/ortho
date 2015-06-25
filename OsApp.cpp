@@ -268,7 +268,7 @@ void OsApp::preFrame()
   updateLogger();
   if(mFramesToSleep > 0) return;
 
-  dynamicsWorld->stepSimulation(1./60.,10,1./600.);
+  dynamicsWorld->stepSimulation(btScalar(1./60.),10,btScalar(1./600.));
 
   updateForces();
 
@@ -1131,7 +1131,7 @@ void OsApp::addFemur()
   femur8->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.0f), z_axis )));
   femur8->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(-78.0f), y_axis )));
   //btMatrix3x3 btRot33 = gmtl44rot2bt33rot(femur8->getTrans());
-  femur8->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(280.0f*0.0023,1230.0f*0.0023,2600.0f*0.0023)));
+  femur8->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(280.0f*0.0023f,1230.0f*0.0023f,2600.0f*0.0023f)));
   //femur8->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(280.0f*0.0023,1230.0f*0.0023,0.0f*0.0023)));
 #if 1
   ConvexDecomposition::WavefrontObj wo;
@@ -1237,7 +1237,7 @@ void OsApp::addTable1()
   table1 = new MeshObj("table1.obj");
   table1->setScale(0.06f);
   table1->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(230.f), y_axis)));
-  table1->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-5.0f*0.06, 0.0f, 0.0f)));
+  table1->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-5.0f*0.06f, 0.0f, 0.0f)));
   //table1->make_bbox();
   //float dx, dy, dz;
   //dx = table1->aabox.mMax[0] - table1->aabox.mMin[0];
@@ -1246,9 +1246,9 @@ void OsApp::addTable1()
   //btCollisionShape *tableShape = new btBoxShape(btVector3(dx*0.06/2, dy*0.06/2, dz*0.06/2));
   //btDefaultMotionState* tableMotionState =
   //              new btDefaultMotionState(btTransform(btQuaternion(gmtl::Math::deg2Rad(230.f),0,0), btVector3(table1->trCentre()[0],table1->trCentre()[1],table1->trCentre()[2])));
-  btCollisionShape *tableShape = new btBoxShape(btVector3(109.f*0.06/2, 10.f*0.06/2, 30.f*0.06/2));
+  btCollisionShape *tableShape = new btBoxShape(btVector3(109.f*0.06f/2, 10.f*0.06f/2, 30.f*0.06f/2));
   btDefaultMotionState* tableMotionState =
-                new btDefaultMotionState(btTransform(btQuaternion(gmtl::Math::deg2Rad(185.f),0,0), btVector3(-0.5f,33.8f*0.06,0.f)));
+                new btDefaultMotionState(btTransform(btQuaternion(gmtl::Math::deg2Rad(185.f),0,0), btVector3(-0.5f,33.8f*0.06f,0.f)));
   btRigidBody::btRigidBodyConstructionInfo tableRigidBodyCI(0, tableMotionState, tableShape, btVector3(0,0,0));
   btRigidBody *tableRigidBody = new btRigidBody(tableRigidBodyCI);
   addBody(tableRigidBody);
@@ -1260,7 +1260,7 @@ void OsApp::addTable2()
   table2 = new MeshObj("table2.obj");
   table2->addTransf(gmtl::makeScale<gmtl::Matrix44f,float>(0.05f));
   table2->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(230.f), y_axis)));
-  table2->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-2.5f*0.05, 20.0f*0.05, 3.0f*0.05)));
+  table2->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-2.5f*0.05f, 20.0f*0.05f, 3.0f*0.05f)));
 }
 
 void OsApp::addTableInst()
@@ -1268,7 +1268,7 @@ void OsApp::addTableInst()
   tableinst = new MeshObj("tableinst.obj");
   tableinst->setScale(gmtl::Vec3f(0.02f, 0.03f, 0.02f));
   tableinst->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(82.f), y_axis)));
-  tableinst->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(300.0f*0.02, -10.0f*0.03, 744.0f*0.02)));
+  tableinst->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(300.0f*0.02f, -10.0f*0.03f, 744.0f*0.02f)));
   tableinst->make_bbox();
   //std::cout << "tableinst " << tableinst->aabox.mMin[0] << ' ' << tableinst->aabox.mMin[1] << ' ' << tableinst->aabox.mMin[2] << ' ' <<
   //  tableinst->aabox.mMax[0] << ' ' << tableinst->aabox.mMax[1] << ' ' << tableinst->aabox.mMax[2] << ' ' << std::endl;
@@ -1365,7 +1365,7 @@ void OsApp::addPerceuse()
   btCompoundShape *compound = new btCompoundShape();
   btTransform mecheTr;
   mecheTr.setIdentity();
-  mecheTr.setOrigin(btVector3(0.f,0.3,-0.22f));
+  mecheTr.setOrigin(btVector3(0.f,0.3f,-0.22f));
   //mecheTr.setRotation(btQuaternion(0.f,gmtl::Math::deg2Rad(90.f),0.f));
   btTransform moteurTr;
   moteurTr.setIdentity();
@@ -1400,7 +1400,7 @@ void OsApp::addPlaque()
   platte->setScale(0.0001f);
   platte->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(79.0f), x_axis )));
   platte->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(5.0f), y_axis )));
-  platte->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(30790.0f*0.0001,76999.0f*0.0001,-5500.0f*0.0001)));
+  platte->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(30790.0f*0.0001f,76999.0f*0.0001f,-5500.0f*0.0001f)));
   //platte->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(0.5f,2.7f,0.1f)));
 #if 1
   ConvexDecomposition::WavefrontObj wo;
@@ -1441,7 +1441,7 @@ void OsApp::addVis()
   scow->initTr(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-scow->center[0],-scow->center[1],-scow->center[2])));
   scow->setScale(0.00009f);
   scow->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
-  scow->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009,32209.0f*0.00009,0.0f*0.00009)));
+  scow->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009f,32209.0f*0.00009f,0.0f*0.00009f)));
   float dx, dy, dz;
   dx = scow->aabox.mMax[0] - scow->aabox.mMin[0];
   dy = scow->aabox.mMax[1] - scow->aabox.mMin[1];
@@ -1480,7 +1480,7 @@ void OsApp::addVis1()
   scow1->initTr(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-scow1->center[0],-scow1->center[1],-scow1->center[2])));
   scow1->setScale(0.00009f);
   scow1->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
-  scow1->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009,32209.0f*0.00009,1000.0f*0.00009)));
+  scow1->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009f,32209.0f*0.00009f,1000.0f*0.00009f)));
   float dx, dy, dz;
   dx = scow1->aabox.mMax[0] - scow1->aabox.mMin[0];
   dy = scow1->aabox.mMax[1] - scow1->aabox.mMin[1];
@@ -1506,7 +1506,7 @@ void OsApp::addVis2()
   scow2->initTr(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-scow2->center[0],-scow2->center[1],-scow2->center[2])));
   scow2->setScale(0.00009f);
   scow2->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
-  scow2->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009,32209.0f*0.00009,2000.0f*0.00009)));
+  scow2->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009f,32209.0f*0.00009f,2000.0f*0.00009f)));
   float dx, dy, dz;
   dx = scow2->aabox.mMax[0] - scow2->aabox.mMin[0];
   dy = scow2->aabox.mMax[1] - scow2->aabox.mMin[1];
@@ -1532,7 +1532,7 @@ void OsApp::addVis3()
   scow3->initTr(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-scow3->center[0],-scow3->center[1],-scow3->center[2])));
   scow3->setScale(0.00009f);
   scow3->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(90.f), z_axis)));
-  scow3->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009,32209.0f*0.00009,-900.0f*0.00009)));
+  scow3->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(33000.0f*0.00009f,32209.0f*0.00009f,-900.0f*0.00009f)));
   float dx, dy, dz;
   dx = scow3->aabox.mMax[0] - scow3->aabox.mMin[0];
   dy = scow3->aabox.mMax[1] - scow3->aabox.mMin[1];
@@ -1582,7 +1582,7 @@ void OsApp::addCube1()
   cube1 = new MeshObj("cube1.obj");
   cube1->setScale(0.003f);
   cube1->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(7.f), y_axis)));
-  cube1->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(510.0f*0.003,750.7f*0.003,580.0f*0.003)));
+  cube1->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(510.0f*0.003f,750.7f*0.003f,580.0f*0.003f)));
   cube1->make_bbox();
   float dx, dy, dz;
   dx = cube1->aabox.mMax[0] - cube1->aabox.mMin[0];
@@ -1602,7 +1602,7 @@ void OsApp::addCube2()
   cube2 = new MeshObj("cube1.obj");
   cube2->setScale(0.003f);
   cube2->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(7.f), y_axis)));
-  cube2->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(770.0f*0.003,750.7f*0.003,560.0f*0.003)));
+  cube2->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(770.0f*0.003f,750.7f*0.003f,560.0f*0.003f)));
   cube2->make_bbox();
   float dx, dy, dz;
   dx = cube2->aabox.mMax[0] - cube2->aabox.mMin[0];
@@ -1625,7 +1625,7 @@ void OsApp::addVerb()
   verb->initTr(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(-verb->center[0],-verb->center[1],-verb->center[2])));
   verb->setScale(0.000057f);
   verb->addTransf(gmtl::makeRot<gmtl::Matrix44f>(gmtl::AxisAnglef(gmtl::Math::deg2Rad(55.0f), x_axis )));
-  verb->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(60000.0f*0.000057,48990.0f*0.000057,-16000.0f*0.000057)));
+  verb->addTransf(gmtl::makeTrans<gmtl::Matrix44f, gmtl::Vec3f>(gmtl::Vec3f(60000.0f*0.000057f,48990.0f*0.000057f,-16000.0f*0.000057f)));
   float dx, dy, dz;
   dx = verb->aabox.mMax[0] - verb->aabox.mMin[0];
   dy = verb->aabox.mMax[1] - verb->aabox.mMin[1];
@@ -1651,7 +1651,7 @@ void OsApp::initPhysics()
   dispatcher = new btCollisionDispatcher(collisionConfiguration);
   solver = new btSequentialImpulseConstraintSolver();
   dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
-  dynamicsWorld->setGravity(btVector3(0, -9.8, 0));
+  dynamicsWorld->setGravity(btVector3(0, -9.8f, 0));
   //dynamicsWorld->setGravity(btVector3(0, 0, 0));
 
   gContactAddedCallback = callbackFunc;
@@ -1700,6 +1700,8 @@ void OsApp::initCGS()
 
 void OsApp::exitCGS()
 {
+  double zeroForces[8] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+  m_cgsGraspDroit->setForce(zeroForces);
   delete m_cgsMainDroite;
   delete m_cgsMasterDroit;
   delete m_cgsGraspDroit;
@@ -1850,7 +1852,7 @@ void OsApp::addContraintes()
 
   addHingeContrainte(po1, po2, btVector3(0,0,6),    btVector3(0,0,-0.5));
   addHingeContrainte(po2, po3, btVector3(0,0,3),    btVector3(0,0,-0.5));
-  addHingeContrainte(pau, in1, btVector3(3.2,0,10), btVector3(0,0,-0.5));
+  addHingeContrainte(pau, in1, btVector3(3.2f,0,10),btVector3(0,0,-0.5));
   addHingeContrainte(in1, in2, btVector3(0,0,5),    btVector3(0,0,-0.5));
   addHingeContrainte(in2, in3, btVector3(0,0,3),    btVector3(0,0,-0.5));
   addHingeContrainte(pau, ma1, btVector3(1,0,11),   btVector3(0,0,-0.5));
@@ -1859,7 +1861,7 @@ void OsApp::addContraintes()
   addHingeContrainte(pau, an1, btVector3(-1.5,0,10),btVector3(0,0,-0.5));
   addHingeContrainte(an1, an2, btVector3(0,0,4.5),  btVector3(0,0,-0.5));
   addHingeContrainte(an2, an3, btVector3(0,0,3),    btVector3(0,0,-0.5));
-  addHingeContrainte(pau, au1, btVector3(-3.8,0,10),btVector3(0,0,-0.5));
+  addHingeContrainte(pau, au1, btVector3(-3.8f,0,10),btVector3(0,0,-0.5));
   addHingeContrainte(au1, au2, btVector3(0,0,4),    btVector3(0,0,-0.5));
   addHingeContrainte(au2, au3, btVector3(0,0,2),    btVector3(0,0,-0.5));
 }
@@ -1876,9 +1878,9 @@ void OsApp::updateForces()
 	static double forces[8] = {0.04,0.04,0.04,0.04,0.04,0.0,0.0,0.0};
 
   m_cgsRcvrDroit->update();
-  double xpos = m_scaleMotion*m_cgsRcvrDroit->getRawData(vht6DofDevice::Freedom::xPos);
-  double ypos = m_scaleMotion*m_cgsRcvrDroit->getRawData(vht6DofDevice::Freedom::yPos);
-  double zpos = m_scaleMotion*m_cgsRcvrDroit->getRawData(vht6DofDevice::Freedom::zPos);
+  double xpos = m_scaleMotion*m_cgsRcvrDroit->getRawData(vht6DofDevice::xPos);
+  double ypos = m_scaleMotion*m_cgsRcvrDroit->getRawData(vht6DofDevice::yPos);
+  double zpos = m_scaleMotion*m_cgsRcvrDroit->getRawData(vht6DofDevice::zPos);
   m_dof6[pau]->getFrameOffsetA().setOrigin(btVector3(xpos,ypos,zpos));
 
   m_cgsMainDroite->update();

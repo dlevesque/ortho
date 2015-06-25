@@ -75,7 +75,7 @@ public:
     , y_axis(gmtl::Vec3f(0.f,1.f,0.f))
     , z_axis(gmtl::Vec3f(0.f,0.f,1.f))
     , m_chemin("C:/Users/Cave/Desktop/hand model files/")
-    , m_scaleMain(0.035)
+    , m_scaleMain(0.025f)
     , m_scaleMotion(1.f)
   {
     initShapes();
@@ -84,6 +84,8 @@ public:
   virtual ~OsApp()
   {
     gluDeleteQuadric(mSphereQuad);
+
+    exitCGS();
 
     selectable.clear();
     fallRigidBodies.clear();
@@ -104,7 +106,12 @@ public:
     delete cube2;
     delete verb;
 
-    if(m_pickConstraint) delete m_pickConstraint;
+    for(int i=dynamicsWorld->getNumConstraints()-1; i>=0; --i)
+    {
+      btTypedConstraint *contr = dynamicsWorld->getConstraint(i);
+      dynamicsWorld->removeConstraint(contr);
+      delete contr;
+    }
 
     for(unsigned int i=0; i<bodies.size(); ++i)
     {
@@ -125,8 +132,6 @@ public:
     delete dispatcher;
     delete collisionConfiguration;
     delete broadphase;
-
-    exitCGS();
   }
 
   virtual void init();
