@@ -3,6 +3,8 @@
 
 using namespace std;
 
+#define DESSINE_TRIANGLES
+
 string doubleSlash(string s)
 {
     //Remplace "//" par "/1/".
@@ -176,23 +178,43 @@ void MeshObj::charger_obj(string nom,MeshObj *first)
                 vector<string> termes=splitSpace(ligne.substr(2)); //On éclate la chaîne en ses espaces (le substr permet d'enlever "f ")
 
                 int ndonnees=(int)termes.size()/3;
+#ifdef DESSINE_TRIANGLES
+                for(int i=0;i<3;i++)
+#else
                 for(int i=0;i<(ndonnees==3?3:4);i++) //On aurait très bien pu mettre i<ndonnees mais je veux vraiment limiter à 3 ou 4
+#endif
                 {
                     iv.push_back(strtol(termes[i*3].c_str(),NULL,10)-1);
                     it.push_back(strtol(termes[i*3+1].c_str(),NULL,10)-1);
                     in.push_back(strtol(termes[i*3+2].c_str(),NULL,10)-1);
                 }
+#ifdef DESSINE_TRIANGLES
+                if(ndonnees==4) //ajouter un 2e triangle s'il y a quatre sommets
+#else
                 if(ndonnees==3) //S'il n'y a que 3 sommets on duplique le dernier pour faire un quad ayant l'apparence d'un triangle
+#endif
                 {
                     iv.push_back(strtol(termes[0].c_str(),NULL,10)-1);
                     it.push_back(strtol(termes[1].c_str(),NULL,10)-1);
                     in.push_back(strtol(termes[2].c_str(),NULL,10)-1);
+#ifdef DESSINE_TRIANGLES
+                    iv.push_back(strtol(termes[6].c_str(),NULL,10)-1);
+                    it.push_back(strtol(termes[7].c_str(),NULL,10)-1);
+                    in.push_back(strtol(termes[8].c_str(),NULL,10)-1);
+                    iv.push_back(strtol(termes[9].c_str(),NULL,10)-1);
+                    it.push_back(strtol(termes[10].c_str(),NULL,10)-1);
+                    in.push_back(strtol(termes[11].c_str(),NULL,10)-1);
+#endif
                 }
 
                 for(unsigned int i=0;i<materiaux.size();i++)
                     if(materiaux[i]->name==curname)
                     {
+#ifdef DESSINE_TRIANGLES
+                        for(int j=0;j<(ndonnees==3?4:8);++j)
+#else
                         for(int j=0;j<4;j++)
+#endif
                             col.push_back(materiaux[i]->coul); //On ajoute la couleur correspondante
                         break;
                     }
@@ -314,8 +336,11 @@ void MeshObj::draw_model(bool nor,bool tex)
         glNormalPointer(GL_FLOAT,0,normals);
     glColorPointer(4,GL_FLOAT,0,colours);
 
+#ifdef DESSINE_TRIANGLES
+    glDrawArrays(GL_TRIANGLES,0,n_data);
+#else
     glDrawArrays(GL_QUADS,0,n_data);
-	
+#endif
 
 
     glDisableClientState(GL_COLOR_ARRAY);
