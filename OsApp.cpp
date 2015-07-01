@@ -1380,6 +1380,7 @@ void OsApp::addPerceuse()
   compound->calculateLocalInertia(mass, fallInertia);
   btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass, fallMotionState, compound, fallInertia);
   btRigidBody *fallRigidBody = new btRigidBody(fallRigidBodyCI);
+  fallRigidBody->setCollisionFlags(fallRigidBody->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
   addBody(fallRigidBody);
   moteur->setBody(fallRigidBody);
 
