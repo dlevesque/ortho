@@ -1346,7 +1346,8 @@ void OsApp::addPerceuse()
   btVector3 centre(moteur->center[0],moteur->center[1],moteur->center[2]);
   buildTrimesh(wo,trimesh,centre,localScaling);
   btGImpactMeshShape *moteurShape = new btGImpactMeshShape(trimesh);
-  moteurShape->updateBound();
+  moteurShape->setMargin(0.2);
+  moteurShape->updateBound(); std::cerr << "****** Marge : " << moteurShape->getMargin() << std::endl;
 
   meche = new MeshObj("meche.obj");
   meche->make_bbox();
@@ -1878,10 +1879,44 @@ void OsApp::updateForces()
 {
 	static double forces[8] = {0.04,0.04,0.04,0.04,0.04,0.0,0.0,0.0};
 
+  const btVector3 &oldPos = m_dof6[pau]->getFrameOffsetA().getOrigin();
+  bool contPaume = false;
+  for(int i=0; i<dynamicsWorld->getDispatcher()->getNumManifolds(); ++i)
+  {
+    btPersistentManifold *contactManifold = dynamicsWorld->getDispatcher()->getManifoldByIndexInternal(i);
+    const btCollisionObject *obj0 = contactManifold->getBody0();
+    const btCollisionObject *obj1 = contactManifold->getBody1();
+    if(((obj0 == m_mainDroiteRB[pau]) || (obj1 == m_mainDroiteRB[pau])) && ((obj0 == moteur->getBody()) | (obj1 == moteur->getBody())))
+    {
+      for(int j=0; j<contactManifold->getNumContacts(); ++j)
+      {
+        btManifoldPoint &pt = contactManifold->getContactPoint(j);
+        if(j == 0)
+        {
+          m_penet[pau] = pt.getDistance();
+        }
+        else
+        {
+          if(pt.getDistance() < m_penet[pau]) m_penet[pau] = pt.getDistance();
+        }
+      }
+      //std::cerr << m_penet[pau] << std::endl;
+      contPaume = true;
+    }
+  }
+
   m_cgsRcvrDroit->update();
   double xpos = m_scaleMotion*m_cgsRcvrDroit->getRawData(vht6DofDevice::xPos);
   double ypos = m_scaleMotion*m_cgsRcvrDroit->getRawData(vht6DofDevice::yPos);
   double zpos = m_scaleMotion*m_cgsRcvrDroit->getRawData(vht6DofDevice::zPos);
+  if(contPaume)
+  {
+    btVector3 newPos(xpos,ypos,zpos);
+    btVector3 direction = (oldPos - newPos).normalized() * (0.2f - m_penet[pau])/0.2f;
+    forces[5] = direction.x();
+    forces[6] = direction.y();
+    forces[7] = direction.z();
+  }
   m_dof6[pau]->getFrameOffsetA().setOrigin(btVector3(xpos,ypos,zpos));
 
   m_cgsMainDroite->update();

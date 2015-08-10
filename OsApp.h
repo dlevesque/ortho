@@ -320,6 +320,7 @@ private:
   std::string    m_fichier[MAX_DOIGTS];
   float          m_scaleMain;
   float          m_scaleMotion;
+  float          m_penet[MAX_DOIGTS];
   MeshObj       *m_mainDroiteMeshObj[MAX_DOIGTS];
   btTriangleMesh m_trimesh[MAX_DOIGTS];
   btRigidBody   *m_mainDroiteRB[MAX_DOIGTS];
